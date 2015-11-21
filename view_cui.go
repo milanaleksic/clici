@@ -13,16 +13,21 @@ type CUIInterface struct {
 	statusField *gocui.View
 }
 
-func (ui *CUIInterface) friendlyCurrentStatusNoAscii(buildStatus JobState) string {
+func friendlyKnownStatus(buildStatus JobState) string {
 	switch {
-	case buildStatus.Building:
-		return "⟳"
 	case buildStatus.PreviousState == Failure:
 		return "✖"
 	case buildStatus.PreviousState == Success:
 		return "✓"
 	}
-	return "?"
+	return ""
+}
+
+func itoidrune(i int) rune {
+	if i < 10 {
+		return rune(48 + i)
+	}
+	return rune(87 + i)
 }
 
 func (ui *CUIInterface) PresentState(state *State) {
@@ -39,6 +44,16 @@ func (ui *CUIInterface) PresentState(state *State) {
 			}
 		}
 		maxX, _ := g.Size()
+		if v, err := g.SetView("job_id", 0, tableStart, 3, 2 * len(state.JobStates) + 4); err != nil {
+			if err != gocui.ErrorUnkView {
+				return err
+			}
+			v.Frame = false
+			v.FgColor = gocui.ColorWhite
+			for i, _ := range state.JobStates {
+				fmt.Fprintf(v, "%s\n", string(itoidrune(i)))
+			}
+		}
 		if v, err := g.SetView("job_name", 2, tableStart, lengthForJobNames + 3, 2 * len(state.JobStates) + 4); err != nil {
 			if err != gocui.ErrorUnkView {
 				return err
@@ -50,19 +65,16 @@ func (ui *CUIInterface) PresentState(state *State) {
 			}
 		}
 		for i, jobState := range state.JobStates {
-			if v, err := g.SetView(fmt.Sprintf("prev_job_status_%v", i), lengthForJobNames + 3, tableStart + i, lengthForJobNames + 5, tableStart + i + 2); err != nil {
+			if v, err := g.SetView(fmt.Sprintf("building_job_%v", i), lengthForJobNames + 3, tableStart + i, lengthForJobNames + 5, tableStart + i + 2); err != nil {
 				if err != gocui.ErrorUnkView {
 					return err
 				}
 				v.Frame = false
+				v.FgColor = gocui.ColorBlue | gocui.AttrBold
 				if jobState.Building {
 					switch {
-					case jobState.PreviousState == Success:
-						v.FgColor = gocui.ColorGreen | gocui.AttrBold
-						fmt.Fprint(v, "✓")
-					case jobState.PreviousState == Failure:
-						v.FgColor = gocui.ColorRed | gocui.AttrBold
-						fmt.Fprint(v, "✖")
+					case jobState.Building:
+						fmt.Fprint(v, "⟳")
 					}
 				}
 			}
@@ -72,8 +84,6 @@ func (ui *CUIInterface) PresentState(state *State) {
 				}
 				v.Frame = false
 				switch {
-				case jobState.Building:
-					v.FgColor = gocui.ColorBlue | gocui.AttrBold
 				case jobState.PreviousState == Failure:
 					v.FgColor = gocui.ColorRed | gocui.AttrBold
 				case jobState.PreviousState == Success:
@@ -81,7 +91,7 @@ func (ui *CUIInterface) PresentState(state *State) {
 				default:
 					v.FgColor = gocui.ColorWhite | gocui.AttrBold
 				}
-				fmt.Fprintf(v, "%v", ui.friendlyCurrentStatusNoAscii(jobState))
+				fmt.Fprintf(v, "%v", friendlyKnownStatus(jobState))
 			}
 			if v, err := g.SetView(fmt.Sprintf("curr_job_description_%v", i), lengthForJobNames + 7, tableStart + i, maxX, tableStart + i + 2); err != nil {
 				if err != gocui.ErrorUnkView {
@@ -104,6 +114,7 @@ func (ui *CUIInterface) PresentState(state *State) {
 				}
 			}
 		}
+		ui.topLine()
 		ui.bottomLine()
 		return nil
 	})
@@ -186,6 +197,20 @@ func (ui *CUIInterface) bottomLine() (err error) {
 		v.FgColor = gocui.ColorWhite
 		v.Frame = false
 		fmt.Fprintf(v, fetchedMessage)
+	}
+	return
+}
+
+func (ui *CUIInterface) topLine() (err error) {
+	maxX, _ := ui.gui.Size()
+	if v, err := ui.gui.SetView("top", -1, -1, maxX, 1); err != nil {
+		if err != gocui.ErrorUnkView {
+			return err
+		}
+		v.BgColor = gocui.ColorDefault
+		v.FgColor = gocui.ColorWhite
+		v.Frame = false
+		fmt.Fprintln(v, "ID               NAME B S DESCRIPTION")
 	}
 	return
 }
