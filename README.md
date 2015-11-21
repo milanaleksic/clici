@@ -6,7 +6,7 @@ Command line for Jenkins pipeline overview
 
 ## How to run
 
-Please run application with `--diff` to see all options.
+Please run application with `--help` to see all options.
 
 Application has 2 modes of running ncurses-like (*advanced* like) and dump-to-console (the *simple* mode). Application will try to activate the advanced one and will fallback to simple one if it detects the advanced is not possible (for example out of an IDE). You can also force the simple mode of working via adequate command line switch.
 
