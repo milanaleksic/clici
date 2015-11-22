@@ -9,8 +9,9 @@ import (
 )
 
 type CUIInterface struct {
-	gui         *gocui.Gui
-	statusField *gocui.View
+	gui             *gocui.Gui
+	statusField     *gocui.View
+	feedbackChannel chan string
 }
 
 func friendlyKnownStatus(buildStatus JobState) string {
@@ -114,15 +115,16 @@ func (ui *CUIInterface) PresentState(state *State) {
 				}
 			}
 		}
-		ui.topLine()
+		ui.topLine(lengthForJobNames)
 		ui.bottomLine()
 		return nil
 	})
 }
 
-func NewCUIInterface(alternativeShutdownChannel chan bool) (view *CUIInterface, err error) {
+func NewCUIInterface(feedbackChannel chan string) (view *CUIInterface, err error) {
 	view = &CUIInterface{
 		gui : gocui.NewGui(),
+		feedbackChannel : feedbackChannel,
 	}
 	if err = view.gui.Init(); err != nil {
 		return
@@ -135,6 +137,7 @@ func NewCUIInterface(alternativeShutdownChannel chan bool) (view *CUIInterface, 
 			if err != gocui.ErrorUnkView {
 				return err
 			}
+			v.Frame = false
 			fmt.Fprintln(v, " Jenkins Ping\n https://github.com/milanaleksic/jenkins_ping")
 		}
 		return nil
@@ -148,13 +151,22 @@ func NewCUIInterface(alternativeShutdownChannel chan bool) (view *CUIInterface, 
 	if err = view.gui.SetKeybinding("", 'q', gocui.ModNone, quit); err != nil {
 		return
 	}
+	for i := 0; i < 20; i++ {
+		var localizedI = i
+		if err = view.gui.SetKeybinding("", itoidrune(i), gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
+			view.feedbackChannel <- string(itoidrune(localizedI))
+			return nil
+		}); err != nil {
+			return
+		}
+	}
 	go func() {
 		err = view.gui.MainLoop()
 		if err != nil && err != gocui.Quit {
 			log.Panicln(err)
 		}
 		view.gui.Close()
-		alternativeShutdownChannel <- true
+		feedbackChannel <- "shutdown"
 	}()
 	return
 }
@@ -187,7 +199,7 @@ func (ui *CUIInterface) bottomLine() (err error) {
 		v.BgColor = gocui.ColorBlack
 		v.FgColor = gocui.ColorWhite
 		v.Frame = false
-		fmt.Fprintf(v, "Q: Quit")
+		fmt.Fprintf(v, "q: Quit  0-9,a-j: Go to job")
 	}
 	if v, err := ui.gui.SetView("bottom_right", maxX - len(fetchedMessage), maxY - 2, maxX, maxY); err != nil {
 		if err != gocui.ErrorUnkView {
@@ -201,7 +213,7 @@ func (ui *CUIInterface) bottomLine() (err error) {
 	return
 }
 
-func (ui *CUIInterface) topLine() (err error) {
+func (ui *CUIInterface) topLine(lengthForJobNames int) (err error) {
 	maxX, _ := ui.gui.Size()
 	if v, err := ui.gui.SetView("top", -1, -1, maxX, 1); err != nil {
 		if err != gocui.ErrorUnkView {
@@ -210,7 +222,7 @@ func (ui *CUIInterface) topLine() (err error) {
 		v.BgColor = gocui.ColorDefault
 		v.FgColor = gocui.ColorWhite
 		v.Frame = false
-		fmt.Fprintln(v, "ID               NAME B S DESCRIPTION")
+		fmt.Fprintf(v, "ID %" + strconv.Itoa(lengthForJobNames) + "v B S DESCRIPTION", "NAME")
 	}
 	return
 }

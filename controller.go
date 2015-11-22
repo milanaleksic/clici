@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"log"
+	"github.com/skratchdot/open-golang/open"
 )
 
 type State struct {
@@ -31,26 +32,43 @@ type JobState struct {
 }
 
 type Controller struct {
-	View      View
-	API       JenkinsApi
 	KnownJobs []string
+	View      View
+	API       Api
+	state     *State
 }
 
 func (controller *Controller) RefreshNodeInformation() {
 	state := &State{}
 	resultFromJenkins, err := controller.API.GetRunningJobs()
 	if err != nil {
+		log.Printf("Error state: %v", err)
 		state.Error = err
-		return
+	} else {
+		controller.explainProperState(resultFromJenkins, state)
 	}
+	controller.state = state
+	controller.View.PresentState(state)
+}
+
+func (controller *Controller) explainProperState(resultFromJenkins *JenkinsStatus, state *State) {
 	state.JobStates = make([]JobState, 0)
-	for _, jobWeCareAbout := range controller.KnownJobs {
+	if len(controller.KnownJobs) == 1 && controller.KnownJobs[0] == "" {
 		for _, item := range resultFromJenkins.JobBuildStatus {
-			if jobWeCareAbout == item.Name {
-				state.JobStates = append(state.JobStates, JobState{
-					JobName: item.Name,
-					PreviousState: controller.previousStateFromColor(item.Color),
-				})
+			state.JobStates = append(state.JobStates, JobState{
+				JobName: item.Name,
+				PreviousState: controller.previousStateFromColor(item.Color),
+			})
+		}
+	} else {
+		for _, jobWeCareAbout := range controller.KnownJobs {
+			for _, item := range resultFromJenkins.JobBuildStatus {
+				if jobWeCareAbout == item.Name {
+					state.JobStates = append(state.JobStates, JobState{
+						JobName: item.Name,
+						PreviousState: controller.previousStateFromColor(item.Color),
+					})
+				}
 			}
 		}
 	}
@@ -59,14 +77,13 @@ func (controller *Controller) RefreshNodeInformation() {
 		iterState := &state.JobStates[ind]
 		status, err := controller.API.GetCurrentStatus(iterState.JobName)
 		if err == nil {
-			iterState.CausesFriendly = controller.API.CausesFriendly(&status)
+			iterState.CausesFriendly = controller.API.CausesFriendly(status)
 			iterState.Building = status.Building
-			iterState.Time = controller.ExplainTime(status)
+			iterState.Time = controller.ExplainTime(*status)
 		} else {
 			iterState.Error = err
 		}
 	}
-	controller.View.PresentState(state)
 }
 
 func (controller *Controller) ExplainTime(status JobStatus) string {
@@ -87,4 +104,24 @@ func (controller *Controller) previousStateFromColor(color string) BuildStatus {
 		log.Printf("Unknown color: %v\n", color)
 		return Unknown
 	}
+}
+
+func (controller *Controller) VisitPageBehindId(id string) {
+	if int(idtoindex(id[0])) >= len(controller.state.JobStates) {
+		log.Printf("Unsupported index (out of bounds of known jobs): %v->%v (max is %v)", id, idtoindex(id[0]), len(controller.state.JobStates) - 1)
+	} else {
+		url := controller.API.GetLastBuildUrlForJob(controller.state.JobStates[idtoindex(id[0])].JobName)
+		open.Run(url)
+	}
+}
+
+func idtoindex(i byte) byte {
+	if i >= 87 {
+		return i - 87
+	}
+	if i >= 48 && i <= 57 {
+		return i - 48
+	}
+	log.Fatalf("Not allowed id: %v", i)
+	return 255
 }

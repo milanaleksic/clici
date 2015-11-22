@@ -1,27 +1,35 @@
 package main
+
 import (
 	"time"
 	"fmt"
 	"os"
 	"os/signal"
+	"github.com/mgutz/ansi"
 )
+
+var greenFormat func(string) string = ansi.ColorFunc("green+b+h")
+var blueFormat func(string) string = ansi.ColorFunc("blue+b+h")
+var redFormat func(string) string = ansi.ColorFunc("red+b+h")
+var yellowFormat func(string) string = ansi.ColorFunc("yellow+b+h")
+var resetFormat string = ansi.ColorCode("reset")
 
 type ConsoleInterface struct {
 }
 
-func registerInterruptListener(alternativeShutdownChannel chan bool) {
+func registerInterruptListener(feedbackChannel chan string) {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	go func() {
 		<-c
-		alternativeShutdownChannel <- true
+		feedbackChannel <- "shutdown"
 	}()
 }
 
-func NewConsoleInterface(alternativeShutdownChannel chan bool) (view *ConsoleInterface, err error) {
+func NewConsoleInterface(feedbackChannel chan string) (view *ConsoleInterface, err error) {
 	fmt.Println("Loading console interface...")
 	view = &ConsoleInterface{}
-	registerInterruptListener(alternativeShutdownChannel)
+	registerInterruptListener(feedbackChannel)
 	return
 }
 

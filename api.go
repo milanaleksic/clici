@@ -4,17 +4,24 @@ import (
 	"fmt"
 	"net/http"
 	"encoding/json"
-	"github.com/mgutz/ansi"
 	"strings"
 )
 
-var greenFormat func(string) string = ansi.ColorFunc("green+b+h")
-var blueFormat func(string) string = ansi.ColorFunc("blue+b+h")
-var redFormat func(string) string = ansi.ColorFunc("red+b+h")
-var yellowFormat func(string) string = ansi.ColorFunc("yellow+b+h")
-var resetFormat string = ansi.ColorCode("reset")
+type Api interface {
+	GetRunningJobs() (resultFromJenkins *JenkinsStatus, err error)
+	GetCurrentStatus(job string) (status *JobStatus, err error)
+	CausesFriendly(status *JobStatus) string
+	GetLastBuildUrlForJob(job string) string
+}
 
-// DON't TRY to use camelCase in DTOs, json unmarshaller doesn't see it!
+type JenkinsApi struct {
+	ServerLocation string
+	cachedCauses   map[string]([]string)
+}
+
+// DTOs
+// 1. DON'T TRY to use camelCase in DTOs, json unmarshaller doesn't see it!
+// 2. DON'T TRY to put space between ":" and "\"", unmarshaller doesn't see it (sometimes)!
 
 type JobStatus struct {
 	Building          bool      `json:"building"`
@@ -55,23 +62,17 @@ type JobBuildStatus struct {
 	Color string `json:"color"`
 }
 
-type JenkinsApi struct {
-	ServerLocation string
-	cachedCauses   map[string]([]string)
-}
-
-func (api *JenkinsApi) GetCurrentStatus(job string) (status JobStatus, err error) {
+func (api *JenkinsApi) GetCurrentStatus(job string) (status *JobStatus, err error) {
 	resp, err := http.Get(fmt.Sprintf("%v/job/%v/lastBuild/api/json?pretty=true&tree=timestamp,estimatedDuration,building,culprits[fullName],actions[causes[userId,upstreamBuild,upstreamProject]]", api.ServerLocation, job))
 	defer resp.Body.Close()
 	if err != nil {
 		return
 	}
-	result := JobStatus{}
+	result := &JobStatus{}
 	err = json.NewDecoder(resp.Body).Decode(&result)
 	if err != nil {
 		return
 	}
-
 	return result, nil
 }
 
@@ -146,4 +147,8 @@ func (api *JenkinsApi) AddCauses(upstreamProject string, upstreamBuild int) (tar
 	api.cachedCauses[link] = target
 
 	return
+}
+
+func (api *JenkinsApi) GetLastBuildUrlForJob(job string) string {
+	return fmt.Sprintf("%v/job/%v/lastBuild/", api.ServerLocation, job)
 }
