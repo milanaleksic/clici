@@ -45,5 +45,5 @@ ship() {
     rm $APPNAME$2
 }
 
-ship "windows" ".exe" $1
+# ship "windows" ".exe" $1
 ship "linux" "" $1
