@@ -90,7 +90,8 @@ func main() {
 		}
 	}
 	if err != nil {
-		log.Println("Failure to boot interface", err)
+		log.Fatal("Failure to boot interface", err)
+	} else {
+		mainLoop(feedbackChannel, &ui)
 	}
-	mainLoop(feedbackChannel, &ui)
 }
