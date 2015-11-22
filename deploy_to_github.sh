@@ -23,6 +23,9 @@ echo Creating and pushing tag
 git tag $1
 git push --tags
 
+echo Sleeping 5 seconds before trying to create release...
+sleep 5
+
 echo Creating release
 github-release release -u milanaleksic -r $APPNAME --tag "$1" --name "v$1"
 
