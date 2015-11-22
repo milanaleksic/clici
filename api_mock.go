@@ -7,8 +7,6 @@ import (
 	"fmt"
 )
 
-// DON't TRY to use camelCase in DTOs, json unmarshaller doesn't see it!
-
 type MockApi struct {
 }
 
