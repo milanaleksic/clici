@@ -141,11 +141,6 @@ func (api *JenkinsApi) AddCauses(upstreamProject string, upstreamBuild int) (tar
 			}
 		}
 	}
-	if len(target) == 0 {
-		for _, culprit := range status.Culprits {
-			target = append(target, culprit.FullName)
-		}
-	}
 	if api.cachedCauses == nil {
 		api.cachedCauses = make(map[string]([]string), 0)
 	}
