@@ -2,6 +2,8 @@ package main
 import (
 	"log"
 	"github.com/jroimartin/gocui"
+	"sort"
+	"strings"
 )
 
 func itoidrune(i int) rune {
@@ -33,15 +35,12 @@ func joinKeysInCsv(m map[string]bool) string {
 	if len(m) == 0 {
 		return ""
 	}
-	n := len(sep) * (len(m) - 1)
-	for key, _ := range m {
-		n += len(key)
-	}
-	b := make([]byte, n+1)
+	b := make([]string, len(m))
 	bp := 0
 	for key, _ := range m {
-		bp += copy(b[bp:], key)
-		bp += copy(b[bp:], sep)
+		b[bp] = key
+		bp += 1
 	}
-	return string(b[:bp-1])
+	sort.Strings(b)
+	return strings.Join(b, sep)
 }

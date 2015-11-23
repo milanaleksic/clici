@@ -91,15 +91,20 @@ func (ui *CUIInterface) showAJobDetailColumns(jobState *JobState, index int, len
 			v.FgColor = gocui.ColorRed | gocui.AttrBold
 			fmt.Fprintf(v, "API processing had an error: %v", jobState.Error)
 		} else if jobState.Building {
-			v.FgColor = gocui.ColorBlue
-			fmt.Fprintf(v, "by %v (%v)", jobState.CausesFriendly, jobState.Time)
+			if jobState.PreviousState == Success {
+				v.FgColor = gocui.ColorBlue
+				fmt.Fprintf(v, "by %v (%v)", jobState.CausesFriendly, jobState.Time)
+			} else {
+				v.FgColor = gocui.ColorRed | gocui.AttrBold
+				fmt.Fprintf(v, "by %v (%v); failed by %v", jobState.CausesFriendly, jobState.Time, jobState.CulpritsFriendly)
+			}
 		} else {
 			if jobState.PreviousState == Success {
 				v.FgColor = gocui.ColorGreen
 				fmt.Fprintf(v, "%v", jobState.CausesFriendly)
 			} else {
 				v.FgColor = gocui.ColorRed | gocui.AttrBold
-				fmt.Fprintf(v, "%v, failed by %v", jobState.CausesFriendly, jobState.CulpritsFriendly)
+				fmt.Fprintf(v, "%v; failed by %v", jobState.CausesFriendly, jobState.CulpritsFriendly)
 			}
 		}
 	}
