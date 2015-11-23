@@ -110,7 +110,7 @@ func (api *JenkinsApi) CausesFriendly(status *JobStatus) string {
 }
 
 func (api *JenkinsApi) AddCauses(upstreamProject string, upstreamBuild int) (target []string, err error) {
-	link := fmt.Sprintf("%v/job/%v/%v/api/json?pretty=true&tree=actions[causes[userId,upstreamBuild,upstreamProject]]",
+	link := fmt.Sprintf("%v/job/%v/%v/api/json?pretty=true&tree=culprits[fullName],actions[causes[userId,upstreamBuild,upstreamProject]]",
 		api.ServerLocation, upstreamProject, upstreamBuild)
 	if cachedValue, ok := api.cachedCauses[link]; ok {
 		return cachedValue, nil
@@ -139,6 +139,11 @@ func (api *JenkinsApi) AddCauses(upstreamProject string, upstreamBuild int) (tar
 				}
 				target = append(target, new...)
 			}
+		}
+	}
+	if len(target) == 0 {
+		for _, culprit := range status.Culprits {
+			target = append(target, culprit.FullName)
 		}
 	}
 	if api.cachedCauses == nil {
