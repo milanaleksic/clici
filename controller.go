@@ -13,6 +13,16 @@ type State struct {
 	Error     error
 }
 
+func (state *State) MaxLengthOfName() (lengthForJobNames int) {
+	lengthForJobNames = 10
+	for _, jobState := range state.JobStates {
+		if len(jobState.JobName) > lengthForJobNames {
+			lengthForJobNames = len(jobState.JobName)
+		}
+	}
+	return
+}
+
 type BuildStatus byte
 
 const (
@@ -22,13 +32,13 @@ const (
 )
 
 type JobState struct {
-	JobName        string
-	Culprits       []string
-	PreviousState  BuildStatus
-	Error          error
-	CausesFriendly string
-	Building       bool
-	Time           string
+	JobName          string
+	CulpritsFriendly string
+	PreviousState    BuildStatus
+	Error            error
+	CausesFriendly   string
+	Building         bool
+	Time             string
 }
 
 type Controller struct {
@@ -78,12 +88,21 @@ func (controller *Controller) explainProperState(resultFromJenkins *JenkinsStatu
 		status, err := controller.API.GetCurrentStatus(iterState.JobName)
 		if err == nil {
 			iterState.CausesFriendly = controller.API.CausesFriendly(status)
+			iterState.CulpritsFriendly = copyCulprits(status)
 			iterState.Building = status.Building
 			iterState.Time = controller.ExplainTime(*status)
 		} else {
 			iterState.Error = err
 		}
 	}
+}
+
+func copyCulprits(status *JobStatus) (culpritsCsv string) {
+	set := make(map[string]bool, 0)
+	for _, culprit := range status.Culprits {
+		set[culprit.FullName] = true
+	}
+	return joinKeysInCsv(set)
 }
 
 func (controller *Controller) ExplainTime(status JobStatus) string {
@@ -113,15 +132,4 @@ func (controller *Controller) VisitPageBehindId(id string) {
 		url := controller.API.GetLastBuildUrlForJob(controller.state.JobStates[idtoindex(id[0])].JobName)
 		open.Run(url)
 	}
-}
-
-func idtoindex(i byte) byte {
-	if i >= 87 {
-		return i - 87
-	}
-	if i >= 48 && i <= 57 {
-		return i - 48
-	}
-	log.Fatalf("Not allowed id: %v", i)
-	return 255
 }

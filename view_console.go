@@ -57,8 +57,8 @@ func (ui *ConsoleInterface) PresentState(state *State) {
 			if jobState.Error != nil {
 				output = output + fmt.Sprintf("%30v %v%v, %v %v\n", yellowFormat(jobState.JobName), ui.friendlyCurrentStatus(jobState), redFormat(", but REST processing had an error: "), jobState.Error, resetFormat)
 			} else if jobState.Building {
-				output = output + fmt.Sprintf("%30v %v by %v (%v) was %v\n", yellowFormat(jobState.JobName), ui.friendlyCurrentStatus(jobState), yellowFormat(jobState.CausesFriendly),
-					jobState.Time, ui.previousStateFriendlyIfBuilding(&jobState))
+				output = output + fmt.Sprintf("%30v %v by %v (%v) was %v by %v\n", yellowFormat(jobState.JobName), ui.friendlyCurrentStatus(jobState), yellowFormat(jobState.CausesFriendly),
+					jobState.Time, ui.previousStateFriendlyIfBuilding(&jobState), jobState.CulpritsFriendly)
 			} else {
 				if jobState.PreviousState == Success {
 					output = output + fmt.Sprintf("%30v %v %v\n", yellowFormat(jobState.JobName), ui.friendlyCurrentStatus(jobState), yellowFormat(jobState.CausesFriendly))

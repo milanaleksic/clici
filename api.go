@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"encoding/json"
 	"strings"
+"log"
 )
 
 type Api interface {
@@ -70,9 +71,6 @@ func (api *JenkinsApi) GetCurrentStatus(job string) (status *JobStatus, err erro
 	}
 	result := &JobStatus{}
 	err = json.NewDecoder(resp.Body).Decode(&result)
-	if err != nil {
-		return
-	}
 	return result, nil
 }
 
@@ -84,29 +82,31 @@ func (api *JenkinsApi) GetRunningJobs() (resultFromJenkins *JenkinsStatus, err e
 	defer resp.Body.Close()
 	resultFromJenkins = &JenkinsStatus{}
 	err = json.NewDecoder(resp.Body).Decode(&resultFromJenkins)
-	if err != nil {
-		return
-	}
-	return
+	return resultFromJenkins, nil
 }
 
 func (api *JenkinsApi) CausesFriendly(status *JobStatus) string {
-	var result []string = make([]string, 0)
+	set := make(map[string]bool, 0)
+	for _, culprit := range status.Culprits {
+		set[culprit.FullName] = true
+	}
 	for _, action := range status.Actions {
 		for _, cause := range action.Causes {
 			if cause.UserId != "" {
-				result = append(result, cause.UserId)
+				set[cause.UserId] = true
 			} else if cause.UpstreamBuild != 0 && cause.UpstreamProject != "" {
 				new, err := api.AddCauses(cause.UpstreamProject, cause.UpstreamBuild)
 				if err != nil {
-					result = append(result, fmt.Sprintf("ERR: %v", err))
+					log.Println("Could not catch causes: %v", err);
 				} else {
-					result = append(result, new...)
+					for _, new := range new {
+						set[new] = true
+					}
 				}
 			}
 		}
 	}
-	return strings.Join(result, ", ")
+	return joinKeysInCsv(set)
 }
 
 func (api *JenkinsApi) AddCauses(upstreamProject string, upstreamBuild int) (target []string, err error) {
@@ -150,7 +150,6 @@ func (api *JenkinsApi) AddCauses(upstreamProject string, upstreamBuild int) (tar
 		api.cachedCauses = make(map[string]([]string), 0)
 	}
 	api.cachedCauses[link] = target
-
 	return
 }
 

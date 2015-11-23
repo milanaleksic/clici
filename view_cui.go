@@ -12,6 +12,7 @@ type CUIInterface struct {
 	gui             *gocui.Gui
 	statusField     *gocui.View
 	feedbackChannel chan string
+	tableStart      int
 }
 
 func friendlyKnownStatus(buildStatus JobState) string {
@@ -24,101 +25,84 @@ func friendlyKnownStatus(buildStatus JobState) string {
 	return ""
 }
 
-func itoidrune(i int) rune {
-	if i < 10 {
-		return rune(48 + i)
-	}
-	return rune(87 + i)
-}
-
 func (ui *CUIInterface) PresentState(state *State) {
 	if state.Error != nil || len(state.JobStates) == 0 {
 		ui.errorDialog(state)
 	}
-
-	ui.gui.SetLayout(func(g *gocui.Gui) error {
-		lengthForJobNames := 10
-		tableStart := 0
-		for _, jobState := range state.JobStates {
-			if len(jobState.JobName) > lengthForJobNames {
-				lengthForJobNames = len(jobState.JobName)
-			}
-		}
-		maxX, _ := g.Size()
-		if v, err := g.SetView("job_id", 0, tableStart, 3, 2 * len(state.JobStates) + 4); err != nil {
-			if err != gocui.ErrorUnkView {
-				return err
-			}
+	ui.gui.SetLayout(func(gui *gocui.Gui) error {
+		lengthForJobNames := state.MaxLengthOfName()
+		if v, err := gui.SetView("job_id", 0, ui.tableStart, 3, 2 * len(state.JobStates) + 4); err != nil {
+			check_cui(err)
 			v.Frame = false
 			v.FgColor = gocui.ColorWhite
 			for i, _ := range state.JobStates {
 				fmt.Fprintf(v, "%s\n", string(itoidrune(i)))
 			}
 		}
-		if v, err := g.SetView("job_name", 2, tableStart, lengthForJobNames + 3, 2 * len(state.JobStates) + 4); err != nil {
-			if err != gocui.ErrorUnkView {
-				return err
-			}
+		if v, err := gui.SetView("job_name", 2, ui.tableStart, lengthForJobNames + 3, 2 * len(state.JobStates) + 4); err != nil {
+			check_cui(err)
 			v.Frame = false
 			v.FgColor = gocui.ColorYellow
 			for _, jobState := range state.JobStates {
 				fmt.Fprintf(v, "%" + strconv.Itoa(lengthForJobNames) + "v\n", jobState.JobName)
 			}
 		}
-		for i, jobState := range state.JobStates {
-			if v, err := g.SetView(fmt.Sprintf("building_job_%v", i), lengthForJobNames + 3, tableStart + i, lengthForJobNames + 5, tableStart + i + 2); err != nil {
-				if err != gocui.ErrorUnkView {
-					return err
-				}
-				v.Frame = false
-				v.FgColor = gocui.ColorBlue | gocui.AttrBold
-				if jobState.Building {
-					switch {
-					case jobState.Building:
-						fmt.Fprint(v, "⟳")
-					}
-				}
-			}
-			if v, err := g.SetView(fmt.Sprintf("curr_job_status_%v", i), lengthForJobNames + 5, tableStart + i, lengthForJobNames + 7, tableStart + i + 2); err != nil {
-				if err != gocui.ErrorUnkView {
-					return err
-				}
-				v.Frame = false
-				switch {
-				case jobState.PreviousState == Failure:
-					v.FgColor = gocui.ColorRed | gocui.AttrBold
-				case jobState.PreviousState == Success:
-					v.FgColor = gocui.ColorGreen | gocui.AttrBold
-				default:
-					v.FgColor = gocui.ColorWhite | gocui.AttrBold
-				}
-				fmt.Fprintf(v, "%v", friendlyKnownStatus(jobState))
-			}
-			if v, err := g.SetView(fmt.Sprintf("curr_job_description_%v", i), lengthForJobNames + 7, tableStart + i, maxX, tableStart + i + 2); err != nil {
-				if err != gocui.ErrorUnkView {
-					return err
-				}
-				v.Frame = false
-				if jobState.Error != nil {
-					v.FgColor = gocui.ColorRed | gocui.AttrBold
-					fmt.Fprintf(v, ", but REST processing had an error: %v", jobState.Error)
-				} else if jobState.Building {
-					v.FgColor = gocui.ColorBlue
-					fmt.Fprintf(v, "by %v (%v)", jobState.CausesFriendly, jobState.Time)
-				} else {
-					if jobState.PreviousState == Success {
-						v.FgColor = gocui.ColorGreen
-					} else {
-						v.FgColor = gocui.ColorRed | gocui.AttrBold
-					}
-					fmt.Fprintf(v, "%v", jobState.CausesFriendly)
-				}
-			}
+		for index, jobState := range state.JobStates {
+			ui.showAJobDetailColumns(&jobState, index, lengthForJobNames)
 		}
 		ui.topLine(lengthForJobNames)
 		ui.bottomLine()
 		return nil
 	})
+}
+
+func (ui *CUIInterface) showAJobDetailColumns(jobState *JobState, index int, lengthForJobNames int) {
+	gui := ui.gui
+	maxX, _ := gui.Size()
+	tableStart := ui.tableStart
+	if v, err := gui.SetView(fmt.Sprintf("building_job_%v", index), lengthForJobNames + 3, tableStart + index, lengthForJobNames + 5, tableStart + index + 2); err != nil {
+		check_cui(err)
+		v.Frame = false
+		v.FgColor = gocui.ColorBlue | gocui.AttrBold
+		if jobState.Building {
+			switch {
+			case jobState.Building:
+				fmt.Fprint(v, "⟳")
+			}
+		}
+	}
+	if v, err := gui.SetView(fmt.Sprintf("curr_job_status_%v", index), lengthForJobNames + 5, tableStart + index, lengthForJobNames + 7, tableStart + index + 2); err != nil {
+		check_cui(err)
+		v.Frame = false
+		switch {
+		case jobState.PreviousState == Failure:
+			v.FgColor = gocui.ColorRed | gocui.AttrBold
+		case jobState.PreviousState == Success:
+			v.FgColor = gocui.ColorGreen | gocui.AttrBold
+		default:
+			v.FgColor = gocui.ColorWhite | gocui.AttrBold
+		}
+		fmt.Fprintf(v, "%v", friendlyKnownStatus(*jobState))
+	}
+	if v, err := gui.SetView(fmt.Sprintf("curr_job_description_%v", index), lengthForJobNames + 7, tableStart + index, maxX, tableStart + index + 2); err != nil {
+		check_cui(err)
+		v.Frame = false
+		if jobState.Error != nil {
+			v.FgColor = gocui.ColorRed | gocui.AttrBold
+			fmt.Fprintf(v, "API processing had an error: %v", jobState.Error)
+		} else if jobState.Building {
+			v.FgColor = gocui.ColorBlue
+			fmt.Fprintf(v, "by %v (%v)", jobState.CausesFriendly, jobState.Time)
+		} else {
+			if jobState.PreviousState == Success {
+				v.FgColor = gocui.ColorGreen
+				fmt.Fprintf(v, "%v", jobState.CausesFriendly)
+			} else {
+				v.FgColor = gocui.ColorRed | gocui.AttrBold
+				fmt.Fprintf(v, "%v, failed by %v", jobState.CausesFriendly, jobState.CulpritsFriendly)
+			}
+		}
+	}
 }
 
 func NewCUIInterface(feedbackChannel chan string) (view *CUIInterface, err error) {
@@ -134,9 +118,7 @@ func NewCUIInterface(feedbackChannel chan string) (view *CUIInterface, err error
 	view.gui.SetLayout(func(g *gocui.Gui) error {
 		maxX, maxY := g.Size()
 		if v, err := g.SetView("center", maxX / 2 - 24, maxY / 2 - 2, maxX / 2 + 23, maxY / 2 + 1); err != nil {
-			if err != gocui.ErrorUnkView {
-				return err
-			}
+			check_cui(err)
 			v.Frame = false
 			fmt.Fprintln(v, " Jenkins Ping\n https://github.com/milanaleksic/jenkins_ping")
 		}
@@ -179,9 +161,7 @@ func (ui *CUIInterface) errorDialog(state *State) {
 	ui.gui.SetLayout(func(g *gocui.Gui) error {
 		maxX, maxY := g.Size()
 		if v, err := g.SetView("center", 1, maxY / 2 - 1, maxX - 1, maxY / 2 + 2); err != nil {
-			if err != gocui.ErrorUnkView {
-				return err
-			}
+			check_cui(err)
 			v.FgColor = gocui.ColorRed
 			fmt.Fprintln(v, fmt.Sprintf("Could not fetch running jobs: %v, known jobs: %v\n", state.Error, len(state.JobStates)))
 		}
@@ -193,18 +173,14 @@ func (ui *CUIInterface) bottomLine() (err error) {
 	maxX, maxY := ui.gui.Size()
 	fetchedMessage := fmt.Sprintf(" @ %v ", time.Now().Format(time.RFC822))
 	if v, err := ui.gui.SetView("bottom_left", -1, maxY - 2, maxX - len(fetchedMessage) + 1, maxY); err != nil {
-		if err != gocui.ErrorUnkView {
-			return err
-		}
+		check_cui(err)
 		v.BgColor = gocui.ColorBlack
 		v.FgColor = gocui.ColorWhite
 		v.Frame = false
 		fmt.Fprintf(v, "q: Quit  0-9,a-j: Go to job")
 	}
 	if v, err := ui.gui.SetView("bottom_right", maxX - len(fetchedMessage), maxY - 2, maxX, maxY); err != nil {
-		if err != gocui.ErrorUnkView {
-			return err
-		}
+		check_cui(err)
 		v.BgColor = gocui.ColorBlack
 		v.FgColor = gocui.ColorWhite
 		v.Frame = false

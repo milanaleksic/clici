@@ -1,7 +1,6 @@
 package main
 
 import (
-	"strings"
 	"math/rand"
 	"time"
 	"fmt"
@@ -64,7 +63,7 @@ func (api *MockApi) GetCurrentStatus(job string) (status *JobStatus, err error) 
 }
 
 func (api *MockApi) CausesFriendly(status *JobStatus) string {
-	var result []string = make([]string, 0)
+	set := make(map[string]bool, 0)
 	var random_causes = []string{
 		"milan",
 		"fred",
@@ -72,9 +71,9 @@ func (api *MockApi) CausesFriendly(status *JobStatus) string {
 		"unknown",
 	}
 	for i := 0; i < rand.Intn(5); i++ {
-		result = append(result, random_causes[rand.Intn(len(random_causes))])
+		set[random_causes[rand.Intn(len(random_causes))]] = true
 	}
-	return strings.Join(result, ", ")
+	return joinKeysInCsv(set)
 }
 
 func (api *MockApi) GetLastBuildUrlForJob(job string) string {
