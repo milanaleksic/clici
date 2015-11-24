@@ -52,6 +52,7 @@ type Cause struct {
 	UserId          string `json:"userId"`
 	UpstreamBuild   int `json:"upstreamBuild"`
 	UpstreamProject string `json:"upstreamProject"`
+	ShortDescription string `json:"shortDescription"`
 }
 
 type JenkinsStatus struct {
@@ -110,7 +111,7 @@ func (api *JenkinsApi) CausesFriendly(status *JobStatus) string {
 }
 
 func (api *JenkinsApi) AddCauses(upstreamProject string, upstreamBuild int) (target []string, err error) {
-	link := fmt.Sprintf("%v/job/%v/%v/api/json?pretty=true&tree=culprits[fullName],actions[causes[userId,upstreamBuild,upstreamProject]]",
+	link := fmt.Sprintf("%v/job/%v/%v/api/json?pretty=true&tree=culprits[fullName],actions[causes[userId,upstreamBuild,upstreamProject,shortDescription]]",
 		api.ServerLocation, upstreamProject, upstreamBuild)
 	if cachedValue, ok := api.cachedCauses[link]; ok {
 		return cachedValue, nil
@@ -138,9 +139,14 @@ func (api *JenkinsApi) AddCauses(upstreamProject string, upstreamBuild int) (tar
 					return
 				}
 				target = append(target, new...)
+			} else if cause.ShortDescription == "Started by an SCM change" {
+				for _, culprit := range status.Culprits {
+					target = append(target, culprit.FullName)
+				}
 			}
 		}
 	}
+	log.Printf("link: %v => %v", link, target)
 	if api.cachedCauses == nil {
 		api.cachedCauses = make(map[string]([]string), 0)
 	}
