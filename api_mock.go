@@ -83,3 +83,22 @@ func (api *MockApi) GetLastBuildUrlForJob(job string) string {
 func (api *MockApi) GetLastCompletedBuildUrlForJob(job string) string {
 	return fmt.Sprintf("http://mock_jenkins/job/%v/lastCompletedBuild/", job)
 }
+
+func (api *MockApi) GetFailedTestList(job string) (testCaseResult []Case, err error) {
+	set := make([]Case, 0)
+	var random_tests = []string{
+		"test1",
+		"test2",
+		"test3",
+		"test4",
+	}
+	for i := 0; i < rand.Intn(5); i++ {
+		aCase := Case {
+			ClassName: random_tests[rand.Intn(len(random_tests))],
+			Name: random_tests[rand.Intn(len(random_tests))],
+			Status: "FAILED",
+		}
+		set = append(set, aCase)
+	}
+	return
+}

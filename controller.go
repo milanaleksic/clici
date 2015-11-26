@@ -10,9 +10,10 @@ import (
 )
 
 type State struct {
-	JobStates []JobState
-	Error     error
-	ShowHelp  bool
+	JobStates   []JobState
+	FailedTests []string
+	Error       error
+	ShowHelp    bool
 }
 
 func (state *State) MaxLengthOfName() (lengthForJobNames int) {
@@ -51,6 +52,7 @@ type Controller struct {
 }
 
 func (controller *Controller) RefreshNodeInformation() {
+	log.Println("Controller: RefreshNodeInformation")
 	state := controller.state
 	resultFromJenkins, err := controller.API.GetRunningJobs()
 	if err != nil {
@@ -59,10 +61,10 @@ func (controller *Controller) RefreshNodeInformation() {
 	} else {
 		controller.explainProperState(resultFromJenkins)
 	}
-	controller.UpdateView()
+	controller.updateView()
 }
 
-func (controller *Controller) UpdateView() {
+func (controller *Controller) updateView() {
 	controller.View.PresentState(&controller.state)
 }
 
@@ -96,7 +98,7 @@ func (controller *Controller) explainProperState(resultFromJenkins *JenkinsStatu
 			iterState.CausesFriendly = controller.API.CausesFriendly(status)
 			iterState.CulpritsFriendly = copyCulprits(status)
 			iterState.Building = status.Building
-			iterState.Time = controller.ExplainTime(*status)
+			iterState.Time = controller.explainTime(*status)
 		} else {
 			iterState.Error = err
 		}
@@ -111,7 +113,7 @@ func copyCulprits(status *JobStatus) (culpritsCsv string) {
 	return joinKeysInCsv(set)
 }
 
-func (controller *Controller) ExplainTime(status JobStatus) string {
+func (controller *Controller) explainTime(status JobStatus) string {
 	timeLeft := status.EstimatedDuration/1000/60 - (time.Now().UnixNano()/1000/1000-status.Timestamp)/1000/60
 	if timeLeft >= 0 {
 		return fmt.Sprintf("%v min more", timeLeft)
@@ -150,20 +152,22 @@ func (controller *Controller) VisitPreviousJob(id int) {
 }
 
 func (controller *Controller) ShowTests(id int) {
-	log.Println("ShowTests")
+	log.Println("Controller: ShowTests")
 	controller.state.Error = errors.New("NYI")
-	controller.UpdateView()
+	//	controller.state.FailedTests = controller.API.GetFailedTestList(controller.state.JobStates[id].JobName)
+	controller.updateView()
 }
 
 func (controller *Controller) ShowHelp() {
-	log.Println("ShowHelp")
+	log.Println("Controller: ShowHelp")
 	controller.state.ShowHelp = true
-	controller.UpdateView()
+	controller.updateView()
 }
 
 func (controller *Controller) RemoveModals() {
-	log.Println("RemoveModals")
+	log.Println("Controller: RemoveModals")
 	controller.state.ShowHelp = false
 	controller.state.Error = nil
-	controller.UpdateView()
+	controller.state.FailedTests = nil
+	controller.updateView()
 }

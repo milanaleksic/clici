@@ -14,17 +14,6 @@ func itoidrune(i int) rune {
 	return rune(87 + i)
 }
 
-func idtoindex(comm rune) byte {
-	if comm >= 'a' && comm <= 'j' {
-		return byte(comm - 'a' + 10)
-	}
-	if comm >= '0' && comm <= '9' {
-		return byte(comm - '0')
-	}
-	log.Fatalf("Not allowed id: %v", comm)
-	return 255
-}
-
 func check_cui(err error) {
 	if err != gocui.ErrorUnkView {
 		log.Panicf("Unexpected error occured: %v", err)

@@ -14,6 +14,7 @@ type Api interface {
 	CausesFriendly(status *JobStatus) string
 	GetLastBuildUrlForJob(job string) string
 	GetLastCompletedBuildUrlForJob(job string) string
+	GetFailedTestList(job string) (testCaseResult []Case, err error)
 }
 
 type JenkinsApi struct {
@@ -161,4 +162,44 @@ func (api *JenkinsApi) GetLastBuildUrlForJob(job string) string {
 
 func (api *JenkinsApi) GetLastCompletedBuildUrlForJob(job string) string {
 	return fmt.Sprintf("%v/job/%v/lastCompletedBuild/", api.ServerLocation, job)
+}
+
+
+
+type TestCaseResult struct {
+	Suites []Suite      `json:"suites"`
+}
+
+type Suite struct {
+	Cases []Case      `json:"cases"`
+}
+
+type Case struct {
+	ClassName string `json:"className"`
+	Name      string `json:"name"`
+	Status    string `json:"status"`
+}
+
+func (api *JenkinsApi) GetFailedTestList(job string) (testCaseResult []Case, err error) {
+	link := fmt.Sprintf("%v/job/lastCompletedJob/testResult/api/json?tree=suites[cases[className,name,status]]", api.ServerLocation)
+	resp, err := http.Get(link)
+	defer resp.Body.Close()
+	if err != nil {
+		return
+	}
+	var received TestCaseResult
+	err = json.NewDecoder(resp.Body).Decode(&received)
+	if err != nil {
+		return
+	}
+
+	testCaseResult = make([]Case, 0)
+	for _, suite := range received.Suites {
+		for _, aCase := range suite.Cases {
+			if aCase.Status != "PASSED" && aCase.Status != "SKIPPED" {
+				testCaseResult = append(testCaseResult, aCase)
+			}
+		}
+	}
+	return
 }
