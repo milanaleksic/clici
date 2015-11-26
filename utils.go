@@ -1,7 +1,8 @@
 package main
+
 import (
-	"log"
 	"github.com/jroimartin/gocui"
+	"log"
 	"sort"
 	"strings"
 )
@@ -13,14 +14,14 @@ func itoidrune(i int) rune {
 	return rune(87 + i)
 }
 
-func idtoindex(i byte) byte {
-	if i >= 87 {
-		return i - 87
+func idtoindex(comm rune) byte {
+	if comm >= 'a' && comm <= 'j' {
+		return byte(comm - 'a' + 10)
 	}
-	if i >= 48 && i <= 57 {
-		return i - 48
+	if comm >= '0' && comm <= '9' {
+		return byte(comm - '0')
 	}
-	log.Fatalf("Not allowed id: %v", i)
+	log.Fatalf("Not allowed id: %v", comm)
 	return 255
 }
 

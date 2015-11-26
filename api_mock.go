@@ -1,9 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"math/rand"
 	"time"
-	"fmt"
 )
 
 type MockApi struct {
@@ -27,7 +27,7 @@ func (api *MockApi) GetRunningJobs() (resultFromJenkins *JenkinsStatus, err erro
 			color = "red"
 		}
 		resultFromJenkins.JobBuildStatus = append(resultFromJenkins.JobBuildStatus, JobBuildStatus{
-			Name: fmt.Sprintf("a_test_job_long_name%v", i),
+			Name:  fmt.Sprintf("a_test_job_long_name%v", i),
 			Color: color,
 		})
 	}
@@ -49,12 +49,12 @@ func (api *MockApi) GetCurrentStatus(job string) (status *JobStatus, err error) 
 		})
 	}
 	result := &JobStatus{
-		Building: rand.Intn(2) == 0,
+		Building:          rand.Intn(2) == 0,
 		EstimatedDuration: int64(rand.Intn(300000)),
-		Timestamp: time.Now().UnixNano() / 1000 / 1000 - int64(rand.Intn(300000)),
-		Culprits: culprits,
-		Actions:[]Action{
-			Action {
+		Timestamp:         time.Now().UnixNano()/1000/1000 - int64(rand.Intn(300000)),
+		Culprits:          culprits,
+		Actions: []Action{
+			Action{
 				Causes: causes,
 			},
 		},
@@ -78,4 +78,8 @@ func (api *MockApi) CausesFriendly(status *JobStatus) string {
 
 func (api *MockApi) GetLastBuildUrlForJob(job string) string {
 	return fmt.Sprintf("http://mock_jenkins/job/%v/lastBuild/", job)
+}
+
+func (api *MockApi) GetLastCompletedBuildUrlForJob(job string) string {
+	return fmt.Sprintf("http://mock_jenkins/job/%v/lastCompletedBuild/", job)
 }

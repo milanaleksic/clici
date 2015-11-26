@@ -1,11 +1,11 @@
 package main
 
 import (
-	"fmt"
-	"net/http"
 	"encoding/json"
+	"fmt"
+	"log"
+	"net/http"
 	"strings"
-"log"
 )
 
 type Api interface {
@@ -13,6 +13,7 @@ type Api interface {
 	GetCurrentStatus(job string) (status *JobStatus, err error)
 	CausesFriendly(status *JobStatus) string
 	GetLastBuildUrlForJob(job string) string
+	GetLastCompletedBuildUrlForJob(job string) string
 }
 
 type JenkinsApi struct {
@@ -49,9 +50,9 @@ type Action struct {
 }
 
 type Cause struct {
-	UserId          string `json:"userId"`
-	UpstreamBuild   int `json:"upstreamBuild"`
-	UpstreamProject string `json:"upstreamProject"`
+	UserId           string `json:"userId"`
+	UpstreamBuild    int    `json:"upstreamBuild"`
+	UpstreamProject  string `json:"upstreamProject"`
 	ShortDescription string `json:"shortDescription"`
 }
 
@@ -98,7 +99,7 @@ func (api *JenkinsApi) CausesFriendly(status *JobStatus) string {
 			} else if cause.UpstreamBuild != 0 && cause.UpstreamProject != "" {
 				new, err := api.AddCauses(cause.UpstreamProject, cause.UpstreamBuild)
 				if err != nil {
-					log.Println("Could not catch causes: %v", err);
+					log.Println("Could not catch causes: %v", err)
 				} else {
 					for _, new := range new {
 						set[new] = true
@@ -156,4 +157,8 @@ func (api *JenkinsApi) AddCauses(upstreamProject string, upstreamBuild int) (tar
 
 func (api *JenkinsApi) GetLastBuildUrlForJob(job string) string {
 	return fmt.Sprintf("%v/job/%v/lastBuild/", api.ServerLocation, job)
+}
+
+func (api *JenkinsApi) GetLastCompletedBuildUrlForJob(job string) string {
+	return fmt.Sprintf("%v/job/%v/lastCompletedBuild/", api.ServerLocation, job)
 }

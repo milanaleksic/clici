@@ -1,16 +1,18 @@
 package main
 
 import (
-	"time"
+	"errors"
 	"fmt"
-	"strings"
-	"log"
 	"github.com/skratchdot/open-golang/open"
+	"log"
+	"strings"
+	"time"
 )
 
 type State struct {
 	JobStates []JobState
 	Error     error
+	ShowHelp  bool
 }
 
 func (state *State) MaxLengthOfName() (lengthForJobNames int) {
@@ -45,28 +47,32 @@ type Controller struct {
 	KnownJobs []string
 	View      View
 	API       Api
-	state     *State
+	state     State
 }
 
 func (controller *Controller) RefreshNodeInformation() {
-	state := &State{}
+	state := controller.state
 	resultFromJenkins, err := controller.API.GetRunningJobs()
 	if err != nil {
 		log.Printf("Error state: %v", err)
 		state.Error = err
 	} else {
-		controller.explainProperState(resultFromJenkins, state)
+		controller.explainProperState(resultFromJenkins)
 	}
-	controller.state = state
-	controller.View.PresentState(state)
+	controller.UpdateView()
 }
 
-func (controller *Controller) explainProperState(resultFromJenkins *JenkinsStatus, state *State) {
+func (controller *Controller) UpdateView() {
+	controller.View.PresentState(&controller.state)
+}
+
+func (controller *Controller) explainProperState(resultFromJenkins *JenkinsStatus) {
+	state := &controller.state
 	state.JobStates = make([]JobState, 0)
 	if len(controller.KnownJobs) == 1 && controller.KnownJobs[0] == "" {
 		for _, item := range resultFromJenkins.JobBuildStatus {
 			state.JobStates = append(state.JobStates, JobState{
-				JobName: item.Name,
+				JobName:       item.Name,
 				PreviousState: controller.previousStateFromColor(item.Color),
 			})
 		}
@@ -75,7 +81,7 @@ func (controller *Controller) explainProperState(resultFromJenkins *JenkinsStatu
 			for _, item := range resultFromJenkins.JobBuildStatus {
 				if jobWeCareAbout == item.Name {
 					state.JobStates = append(state.JobStates, JobState{
-						JobName: item.Name,
+						JobName:       item.Name,
 						PreviousState: controller.previousStateFromColor(item.Color),
 					})
 				}
@@ -106,7 +112,7 @@ func copyCulprits(status *JobStatus) (culpritsCsv string) {
 }
 
 func (controller *Controller) ExplainTime(status JobStatus) string {
-	timeLeft := status.EstimatedDuration / 1000 / 60 - (time.Now().UnixNano() / 1000 / 1000 - status.Timestamp) / 1000 / 60
+	timeLeft := status.EstimatedDuration/1000/60 - (time.Now().UnixNano()/1000/1000-status.Timestamp)/1000/60
 	if timeLeft >= 0 {
 		return fmt.Sprintf("%v min more", timeLeft)
 	} else {
@@ -125,11 +131,39 @@ func (controller *Controller) previousStateFromColor(color string) BuildStatus {
 	}
 }
 
-func (controller *Controller) VisitPageBehindId(id string) {
-	if int(idtoindex(id[0])) >= len(controller.state.JobStates) {
-		log.Printf("Unsupported index (out of bounds of known jobs): %v->%v (max is %v)", id, idtoindex(id[0]), len(controller.state.JobStates) - 1)
+func (controller *Controller) VisitCurrentJob(id int) {
+	if int(id) >= len(controller.state.JobStates) {
+		log.Printf("Unsupported index (out of bounds of known jobs): %v (max is %v)", id, len(controller.state.JobStates)-1)
 	} else {
-		url := controller.API.GetLastBuildUrlForJob(controller.state.JobStates[idtoindex(id[0])].JobName)
+		url := controller.API.GetLastBuildUrlForJob(controller.state.JobStates[id].JobName)
 		open.Run(url)
 	}
+}
+
+func (controller *Controller) VisitPreviousJob(id int) {
+	if int(id) >= len(controller.state.JobStates) {
+		log.Printf("Unsupported index (out of bounds of known jobs): %v (max is %v)", id, len(controller.state.JobStates)-1)
+	} else {
+		url := controller.API.GetLastCompletedBuildUrlForJob(controller.state.JobStates[id].JobName)
+		open.Run(url)
+	}
+}
+
+func (controller *Controller) ShowTests(id int) {
+	log.Println("ShowTests")
+	controller.state.Error = errors.New("NYI")
+	controller.UpdateView()
+}
+
+func (controller *Controller) ShowHelp() {
+	log.Println("ShowHelp")
+	controller.state.ShowHelp = true
+	controller.UpdateView()
+}
+
+func (controller *Controller) RemoveModals() {
+	log.Println("RemoveModals")
+	controller.state.ShowHelp = false
+	controller.state.Error = nil
+	controller.UpdateView()
 }

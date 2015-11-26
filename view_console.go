@@ -1,11 +1,11 @@
 package main
 
 import (
-	"time"
 	"fmt"
+	"github.com/mgutz/ansi"
 	"os"
 	"os/signal"
-	"github.com/mgutz/ansi"
+	"time"
 )
 
 var greenFormat func(string) string = ansi.ColorFunc("green+b+h")
@@ -17,16 +17,16 @@ var resetFormat string = ansi.ColorCode("reset")
 type ConsoleInterface struct {
 }
 
-func registerInterruptListener(feedbackChannel chan string) {
+func registerInterruptListener(feedbackChannel chan Command) {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	go func() {
 		<-c
-		feedbackChannel <- "shutdown"
+		feedbackChannel <- CmdShutdown()
 	}()
 }
 
-func NewConsoleInterface(feedbackChannel chan string) (view *ConsoleInterface, err error) {
+func NewConsoleInterface(feedbackChannel chan Command) (view *ConsoleInterface, err error) {
 	fmt.Println("Loading console interface...")
 	view = &ConsoleInterface{}
 	registerInterruptListener(feedbackChannel)
@@ -53,7 +53,8 @@ func (ui *ConsoleInterface) PresentState(state *State) {
 	if state.Error != nil {
 		output = output + redFormat(fmt.Sprintf("Could not fetch running jobs: %v\n", state.Error)) + resetFormat
 	} else {
-		for _, jobState := range state.JobStates {
+		for i, jobState := range state.JobStates {
+			output = output + string(itoidrune(i)) + " "
 			if jobState.Error != nil {
 				output = output + fmt.Sprintf("%30v %v%v, %v %v\n", yellowFormat(jobState.JobName), ui.friendlyCurrentStatus(jobState), redFormat(", but REST processing had an error: "), jobState.Error, resetFormat)
 			} else if jobState.Building {
@@ -85,7 +86,6 @@ func (ui *ConsoleInterface) previousStateFriendlyIfBuilding(state *JobState) str
 	}
 	return ""
 }
-
 
 func (ui *ConsoleInterface) Close() {
 	// no operation
