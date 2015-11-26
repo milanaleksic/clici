@@ -66,7 +66,7 @@ type JobBuildStatus struct {
 }
 
 func (api *JenkinsApi) GetCurrentStatus(job string) (status *JobStatus, err error) {
-	resp, err := http.Get(fmt.Sprintf("%v/job/%v/lastBuild/api/json?pretty=true&tree=timestamp,estimatedDuration,building,culprits[fullName],actions[causes[userId,upstreamBuild,upstreamProject]]", api.ServerLocation, job))
+	resp, err := http.Get(fmt.Sprintf("%v/job/%v/lastBuild/api/json?tree=timestamp,estimatedDuration,building,culprits[fullName],actions[causes[userId,upstreamBuild,upstreamProject]]", api.ServerLocation, job))
 	defer resp.Body.Close()
 	if err != nil {
 		return
@@ -77,7 +77,7 @@ func (api *JenkinsApi) GetCurrentStatus(job string) (status *JobStatus, err erro
 }
 
 func (api *JenkinsApi) GetRunningJobs() (resultFromJenkins *JenkinsStatus, err error) {
-	resp, err := http.Get(fmt.Sprintf("%v/api/json?pretty=true&tree=jobs[name,color]", api.ServerLocation))
+	resp, err := http.Get(fmt.Sprintf("%v/api/json?tree=jobs[name,color]", api.ServerLocation))
 	if err != nil {
 		return
 	}
@@ -112,7 +112,7 @@ func (api *JenkinsApi) CausesFriendly(status *JobStatus) string {
 }
 
 func (api *JenkinsApi) AddCauses(upstreamProject string, upstreamBuild int) (target []string, err error) {
-	link := fmt.Sprintf("%v/job/%v/%v/api/json?pretty=true&tree=culprits[fullName],actions[causes[userId,upstreamBuild,upstreamProject,shortDescription]]",
+	link := fmt.Sprintf("%v/job/%v/%v/api/json?tree=culprits[fullName],actions[causes[userId,upstreamBuild,upstreamProject,shortDescription]]",
 		api.ServerLocation, upstreamProject, upstreamBuild)
 	if cachedValue, ok := api.cachedCauses[link]; ok {
 		return cachedValue, nil
