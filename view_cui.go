@@ -31,6 +31,11 @@ func (ui *CUIInterface) PresentState(state *State) {
 		ui.bottomLine()
 		return
 	}
+	if len(state.FailedTests) != 0 {
+		ui.informationDialogOfTests(state)
+		ui.bottomLine()
+		return
+	}
 	ui.gui.SetLayout(func(gui *gocui.Gui) error {
 		lengthForJobNames := state.MaxLengthOfName()
 		if v, err := gui.SetView("job_id", 0, ui.tableStart, 3, 2*len(state.JobStates)+4); err != nil {
@@ -254,6 +259,28 @@ func (ui *CUIInterface) helpDialog() {
 			         t+<id> - Show Test failures (NYI)
 			          Enter - Close Help
 			`)
+		}
+		return nil
+	})
+}
+
+func (ui *CUIInterface) informationDialogOfTests(state *State) {
+	ui.gui.SetLayout(func(g *gocui.Gui) error {
+		maxX, maxY := g.Size()
+		if v, err := g.SetView("center", 2, 1, maxX-3, maxY-3); err != nil {
+			check_cui(err)
+			maxLength := maxX - 6
+			var output string = fmt.Sprintf("Failed tests (%d of them): \n", len(state.FailedTests))
+			for _, failedTest := range state.FailedTests {
+				if len(failedTest) > maxLength {
+					output = output + fmt.Sprintf("%s\n", failedTest[len(failedTest)-maxLength:])
+				} else {
+					output = output + fmt.Sprintf("%s\n", failedTest)
+				}
+			}
+			v.FgColor = gocui.ColorWhite
+			v.Overwrite = false
+			fmt.Fprintln(v, output)
 		}
 		return nil
 	})

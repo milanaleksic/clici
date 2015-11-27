@@ -22,6 +22,14 @@ type JenkinsApi struct {
 	cachedCauses   map[string]([]string)
 }
 
+func (api *JenkinsApi) GetLastBuildUrlForJob(job string) string {
+	return fmt.Sprintf("%v/job/%v/lastBuild/", api.ServerLocation, job)
+}
+
+func (api *JenkinsApi) GetLastCompletedBuildUrlForJob(job string) string {
+	return fmt.Sprintf("%v/job/%v/lastCompletedBuild/", api.ServerLocation, job)
+}
+
 // DTOs
 // 1. DON'T TRY to use camelCase in DTOs, json unmarshaller doesn't see it!
 // 2. DON'T TRY to put space between ":" and "\"", unmarshaller doesn't see it (sometimes)!
@@ -57,15 +65,6 @@ type Cause struct {
 	ShortDescription string `json:"shortDescription"`
 }
 
-type JenkinsStatus struct {
-	JobBuildStatus []JobBuildStatus `json:"jobs"`
-}
-
-type JobBuildStatus struct {
-	Name  string `json:"name"`
-	Color string `json:"color"`
-}
-
 func (api *JenkinsApi) GetCurrentStatus(job string) (status *JobStatus, err error) {
 	resp, err := http.Get(fmt.Sprintf("%v/job/%v/lastBuild/api/json?tree=timestamp,estimatedDuration,building,culprits[fullName],actions[causes[userId,upstreamBuild,upstreamProject]]", api.ServerLocation, job))
 	defer resp.Body.Close()
@@ -75,6 +74,15 @@ func (api *JenkinsApi) GetCurrentStatus(job string) (status *JobStatus, err erro
 	result := &JobStatus{}
 	err = json.NewDecoder(resp.Body).Decode(&result)
 	return result, nil
+}
+
+type JenkinsStatus struct {
+	JobBuildStatus []JobBuildStatus `json:"jobs"`
+}
+
+type JobBuildStatus struct {
+	Name  string `json:"name"`
+	Color string `json:"color"`
 }
 
 func (api *JenkinsApi) GetRunningJobs() (resultFromJenkins *JenkinsStatus, err error) {
@@ -156,16 +164,6 @@ func (api *JenkinsApi) AddCauses(upstreamProject string, upstreamBuild int) (tar
 	return
 }
 
-func (api *JenkinsApi) GetLastBuildUrlForJob(job string) string {
-	return fmt.Sprintf("%v/job/%v/lastBuild/", api.ServerLocation, job)
-}
-
-func (api *JenkinsApi) GetLastCompletedBuildUrlForJob(job string) string {
-	return fmt.Sprintf("%v/job/%v/lastCompletedBuild/", api.ServerLocation, job)
-}
-
-
-
 type TestCaseResult struct {
 	Suites []Suite      `json:"suites"`
 }
@@ -181,7 +179,8 @@ type Case struct {
 }
 
 func (api *JenkinsApi) GetFailedTestList(job string) (testCaseResult []Case, err error) {
-	link := fmt.Sprintf("%v/job/lastCompletedJob/testResult/api/json?tree=suites[cases[className,name,status]]", api.ServerLocation)
+	link := fmt.Sprintf("%v/job/%s/lastFailedBuild/testReport/api/json?tree=suites[cases[className,name,status]]", api.ServerLocation, job)
+	log.Printf("Visiting %s\n", link)
 	resp, err := http.Get(link)
 	defer resp.Body.Close()
 	if err != nil {

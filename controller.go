@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"github.com/skratchdot/open-golang/open"
 	"log"
@@ -153,8 +152,17 @@ func (controller *Controller) VisitPreviousJob(id int) {
 
 func (controller *Controller) ShowTests(id int) {
 	log.Println("Controller: ShowTests")
-	controller.state.Error = errors.New("NYI")
-	//	controller.state.FailedTests = controller.API.GetFailedTestList(controller.state.JobStates[id].JobName)
+	failedTests, err := controller.API.GetFailedTestList(controller.state.JobStates[id].JobName)
+	if err != nil {
+		log.Printf("Error state: %v", err)
+		controller.state.Error = err
+	} else {
+		testNames := make([]string, len(failedTests))
+		for i, failedTest := range failedTests {
+			testNames[i] = fmt.Sprintf("%s %s", failedTest.ClassName, failedTest.Name)
+		}
+		controller.state.FailedTests = testNames
+	}
 	controller.updateView()
 }
 
