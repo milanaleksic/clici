@@ -12,6 +12,7 @@ type Api interface {
 	GetRunningJobs() (resultFromJenkins *JenkinsStatus, err error)
 	GetCurrentStatus(job string) (status *JobStatus, err error)
 	CausesFriendly(status *JobStatus) string
+	CausesOfPreviousFailureFriendly(job string) string
 	GetLastBuildUrlForJob(job string) string
 	GetLastCompletedBuildUrlForJob(job string) string
 	GetFailedTestList(job string) (testCaseResult []Case, err error)
@@ -76,6 +77,17 @@ func (api *JenkinsApi) GetCurrentStatus(job string) (status *JobStatus, err erro
 	return result, nil
 }
 
+func (api *JenkinsApi) getLastCompletedStatus(job string) (status *JobStatus, err error) {
+	resp, err := http.Get(fmt.Sprintf("%v/job/%v/lastCompletedBuild/api/json?tree=timestamp,estimatedDuration,building,culprits[fullName],actions[causes[userId,upstreamBuild,upstreamProject]]", api.ServerLocation, job))
+	defer resp.Body.Close()
+	if err != nil {
+		return
+	}
+	result := &JobStatus{}
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	return result, nil
+}
+
 type JenkinsStatus struct {
 	JobBuildStatus []JobBuildStatus `json:"jobs"`
 }
@@ -102,6 +114,34 @@ func (api *JenkinsApi) CausesFriendly(status *JobStatus) string {
 		set[culprit.FullName] = true
 	}
 	for _, action := range status.Actions {
+		for _, cause := range action.Causes {
+			if cause.UserId != "" {
+				set[cause.UserId] = true
+			} else if cause.UpstreamBuild != 0 && cause.UpstreamProject != "" {
+				new, err := api.AddCauses(cause.UpstreamProject, cause.UpstreamBuild)
+				if err != nil {
+					log.Println("Could not catch causes: %v", err)
+				} else {
+					for _, new := range new {
+						set[new] = true
+					}
+				}
+			}
+		}
+	}
+	return joinKeysInCsv(set)
+}
+
+func (api *JenkinsApi) CausesOfPreviousFailureFriendly(name string) string {
+	previousStatus, err := api.getLastCompletedStatus(name)
+	if err != nil {
+		return "?"
+	}
+	set := make(map[string]bool, 0)
+	for _, culprit := range previousStatus.Culprits {
+		set[culprit.FullName] = true
+	}
+	for _, action := range previousStatus.Actions {
 		for _, cause := range action.Causes {
 			if cause.UserId != "" {
 				set[cause.UserId] = true
@@ -165,11 +205,11 @@ func (api *JenkinsApi) AddCauses(upstreamProject string, upstreamBuild int) (tar
 }
 
 type TestCaseResult struct {
-	Suites []Suite      `json:"suites"`
+	Suites []Suite `json:"suites"`
 }
 
 type Suite struct {
-	Cases []Case      `json:"cases"`
+	Cases []Case `json:"cases"`
 }
 
 type Case struct {

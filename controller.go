@@ -95,21 +95,13 @@ func (controller *Controller) explainProperState(resultFromJenkins *JenkinsStatu
 		status, err := controller.API.GetCurrentStatus(iterState.JobName)
 		if err == nil {
 			iterState.CausesFriendly = controller.API.CausesFriendly(status)
-			iterState.CulpritsFriendly = copyCulprits(status)
+			iterState.CulpritsFriendly = controller.API.CausesOfPreviousFailureFriendly(iterState.JobName)
 			iterState.Building = status.Building
 			iterState.Time = controller.explainTime(*status)
 		} else {
 			iterState.Error = err
 		}
 	}
-}
-
-func copyCulprits(status *JobStatus) (culpritsCsv string) {
-	set := make(map[string]bool, 0)
-	for _, culprit := range status.Culprits {
-		set[culprit.FullName] = true
-	}
-	return joinKeysInCsv(set)
 }
 
 func (controller *Controller) explainTime(status JobStatus) string {

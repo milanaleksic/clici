@@ -76,6 +76,10 @@ func (api *MockApi) CausesFriendly(status *JobStatus) string {
 	return joinKeysInCsv(set)
 }
 
+func (api *MockApi) CausesOfPreviousFailureFriendly(job string) string {
+	return api.CausesFriendly(&JobStatus{})
+}
+
 func (api *MockApi) GetLastBuildUrlForJob(job string) string {
 	return fmt.Sprintf("http://mock_jenkins/job/%v/lastBuild/", job)
 }
