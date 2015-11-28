@@ -74,24 +74,27 @@ func (api *JenkinsApi) GetCurrentStatus(job string) (status *JobStatus, err erro
 }
 
 func (api *JenkinsApi) getStatusForJob(job string, id string) (status *JobStatus, err error) {
-	possibleCacheKey := fmt.Sprintf("%s-%d", job, id)
-	if id != "lastBuild" {
+	possibleCacheKey := fmt.Sprintf("%s-%s", job, id)
+	if id != "lastBuild" && id != "lastCompletedBuild" {
+		if api.cachedStatuses == nil {
+			api.cachedStatuses = make(map[string](*JobStatus), 0)
+		}
 		if cachedValue, ok := api.cachedStatuses[possibleCacheKey]; ok {
+			log.Println("Using from cache: ", possibleCacheKey)
 			return cachedValue, nil
 		}
 	}
-	resp, err := http.Get(fmt.Sprintf("%v/job/%v/%v/api/json?tree=id,result,timestamp,estimatedDuration,building,culprits[fullName],actions[causes[userId,upstreamBuild,upstreamProject,shortDescription]]",
-		api.ServerLocation, job, id))
+	link := fmt.Sprintf("%v/job/%v/%v/api/json?tree=id,result,timestamp,estimatedDuration,building,culprits[fullName],actions[causes[userId,upstreamBuild,upstreamProject,shortDescription]]",
+		api.ServerLocation, job, id)
+	log.Printf("Visiting %v", link)
+	resp, err := http.Get(link)
 	defer resp.Body.Close()
 	if err != nil {
 		return
 	}
 	result := &JobStatus{}
 	err = json.NewDecoder(resp.Body).Decode(&result)
-	if err != nil && id != "lastBuild" {
-		if api.cachedStatuses == nil {
-			api.cachedStatuses = make(map[string](*JobStatus), 0)
-		}
+	if err == nil && id != "lastBuild" && id != "lastCompletedBuild" {
 		api.cachedStatuses[possibleCacheKey] = result
 	}
 	return result, nil
@@ -143,7 +146,7 @@ func (api *JenkinsApi) CausesFriendly(status *JobStatus) string {
 
 func (api *JenkinsApi) CausesOfPreviousFailuresFriendly(name string) string {
 	set := make(map[string]bool, 0)
-	id := "lastCompletedJob"
+	id := "lastCompletedBuild"
 	for {
 		statusIterator, err := api.getStatusForJob(name, id)
 		if err != nil {
