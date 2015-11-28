@@ -3,8 +3,10 @@ package main
 import (
 	"flag"
 	"log"
+	"os"
 	"strings"
 	"time"
+	"errors"
 )
 
 type View interface {
@@ -18,12 +20,22 @@ type Options struct {
 	SimpleInterface bool
 	Mock            bool
 	Refresh         time.Duration
+	DoLog			bool
 }
 
 var options Options
 
+type BlackHoleWriter struct {
+}
+
+func (w *BlackHoleWriter) Write(p []byte) (n int, err error) {
+	err = errors.New("black hole writer")
+	return
+}
+
 func init() {
 	jobs := flag.String("jobs", "", "CSV of all jobs on the server you want to track")
+	doLog := flag.Bool("doLog", false, "Make a log of program execution")
 	server := flag.String("server", "http://jenkins", "URL of the Jenkins server")
 	simpleInterface := flag.Bool("simple", false, "Force simple interface (keeps feeding into console)")
 	mock := flag.Bool("mock", false, "Use mocked data to see how program behaves")
@@ -35,10 +47,21 @@ func init() {
 		SimpleInterface: *simpleInterface,
 		Mock:            *mock,
 		Refresh:         *refresh,
+		DoLog:           *doLog,
 	}
 }
 
 func mainLoop(feedbackChannel chan Command, ui *View) {
+	if options.DoLog {
+		logFile, err := os.OpenFile("jenkins_ping.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+		if err != nil {
+			log.Fatalf("Error opening log file: %v", err)
+		}
+		defer logFile.Close()
+		log.SetOutput(logFile)
+	} else {
+		log.SetOutput(&BlackHoleWriter{})
+	}
 	var api Api
 	if options.Mock {
 		api = &MockApi{}
