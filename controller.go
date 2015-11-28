@@ -95,7 +95,7 @@ func (controller *Controller) explainProperState(resultFromJenkins *JenkinsStatu
 		status, err := controller.API.GetCurrentStatus(iterState.JobName)
 		if err == nil {
 			iterState.CausesFriendly = controller.API.CausesFriendly(status)
-			iterState.CulpritsFriendly = controller.API.CausesOfPreviousFailureFriendly(iterState.JobName)
+			iterState.CulpritsFriendly = controller.API.CausesOfPreviousFailuresFriendly(iterState.JobName)
 			iterState.Building = status.Building
 			iterState.Time = controller.explainTime(*status)
 		} else {

@@ -1,12 +1,12 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"log"
 	"os"
 	"strings"
 	"time"
-	"errors"
 )
 
 type View interface {
@@ -20,7 +20,7 @@ type Options struct {
 	SimpleInterface bool
 	Mock            bool
 	Refresh         time.Duration
-	DoLog			bool
+	DoLog           bool
 }
 
 var options Options

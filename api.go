@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -12,7 +13,7 @@ type Api interface {
 	GetRunningJobs() (resultFromJenkins *JenkinsStatus, err error)
 	GetCurrentStatus(job string) (status *JobStatus, err error)
 	CausesFriendly(status *JobStatus) string
-	CausesOfPreviousFailureFriendly(job string) string
+	CausesOfPreviousFailuresFriendly(job string) string
 	GetLastBuildUrlForJob(job string) string
 	GetLastCompletedBuildUrlForJob(job string) string
 	GetFailedTestList(job string) (testCaseResult []Case, err error)
@@ -20,7 +21,7 @@ type Api interface {
 
 type JenkinsApi struct {
 	ServerLocation string
-	cachedCauses   map[string]([]string)
+	cachedStatuses map[string](*JobStatus)
 }
 
 func (api *JenkinsApi) GetLastBuildUrlForJob(job string) string {
@@ -36,6 +37,8 @@ func (api *JenkinsApi) GetLastCompletedBuildUrlForJob(job string) string {
 // 2. DON'T TRY to put space between ":" and "\"", unmarshaller doesn't see it (sometimes)!
 
 type JobStatus struct {
+	Id                string    `json:"id"`
+	Result            string    `json:"result"`
 	Building          bool      `json:"building"`
 	Actions           []Action  `json:"actions"`
 	Culprits          []Culprit `json:"culprits"`
@@ -67,24 +70,30 @@ type Cause struct {
 }
 
 func (api *JenkinsApi) GetCurrentStatus(job string) (status *JobStatus, err error) {
-	resp, err := http.Get(fmt.Sprintf("%v/job/%v/lastBuild/api/json?tree=timestamp,estimatedDuration,building,culprits[fullName],actions[causes[userId,upstreamBuild,upstreamProject]]", api.ServerLocation, job))
-	defer resp.Body.Close()
-	if err != nil {
-		return
-	}
-	result := &JobStatus{}
-	err = json.NewDecoder(resp.Body).Decode(&result)
-	return result, nil
+	return api.getStatusForJob(job, "lastBuild")
 }
 
-func (api *JenkinsApi) getLastCompletedStatus(job string) (status *JobStatus, err error) {
-	resp, err := http.Get(fmt.Sprintf("%v/job/%v/lastCompletedBuild/api/json?tree=timestamp,estimatedDuration,building,culprits[fullName],actions[causes[userId,upstreamBuild,upstreamProject]]", api.ServerLocation, job))
+func (api *JenkinsApi) getStatusForJob(job string, id string) (status *JobStatus, err error) {
+	possibleCacheKey := fmt.Sprintf("%s-%d", job, id)
+	if id != "lastBuild" {
+		if cachedValue, ok := api.cachedStatuses[possibleCacheKey]; ok {
+			return cachedValue, nil
+		}
+	}
+	resp, err := http.Get(fmt.Sprintf("%v/job/%v/%v/api/json?tree=id,result,timestamp,estimatedDuration,building,culprits[fullName],actions[causes[userId,upstreamBuild,upstreamProject,shortDescription]]",
+		api.ServerLocation, job, id))
 	defer resp.Body.Close()
 	if err != nil {
 		return
 	}
 	result := &JobStatus{}
 	err = json.NewDecoder(resp.Body).Decode(&result)
+	if err != nil && id != "lastBuild" {
+		if api.cachedStatuses == nil {
+			api.cachedStatuses = make(map[string](*JobStatus), 0)
+		}
+		api.cachedStatuses[possibleCacheKey] = result
+	}
 	return result, nil
 }
 
@@ -132,51 +141,49 @@ func (api *JenkinsApi) CausesFriendly(status *JobStatus) string {
 	return joinKeysInCsv(set)
 }
 
-func (api *JenkinsApi) CausesOfPreviousFailureFriendly(name string) string {
-	previousStatus, err := api.getLastCompletedStatus(name)
-	if err != nil {
-		return "?"
-	}
+func (api *JenkinsApi) CausesOfPreviousFailuresFriendly(name string) string {
 	set := make(map[string]bool, 0)
-	for _, culprit := range previousStatus.Culprits {
-		set[culprit.FullName] = true
-	}
-	for _, action := range previousStatus.Actions {
-		for _, cause := range action.Causes {
-			if cause.UserId != "" {
-				set[cause.UserId] = true
-			} else if cause.UpstreamBuild != 0 && cause.UpstreamProject != "" {
-				new, err := api.AddCauses(cause.UpstreamProject, cause.UpstreamBuild)
-				if err != nil {
-					log.Println("Could not catch causes: %v", err)
-				} else {
-					for _, new := range new {
-						set[new] = true
+	id := "lastCompletedJob"
+	for {
+		statusIterator, err := api.getStatusForJob(name, id)
+		if err != nil {
+			log.Println("Could not fetch causes: ", err)
+			return "?"
+		}
+		if statusIterator.Result == "SUCCESS" {
+			break
+		}
+		for _, culprit := range statusIterator.Culprits {
+			set[culprit.FullName] = true
+		}
+		for _, action := range statusIterator.Actions {
+			for _, cause := range action.Causes {
+				if cause.UserId != "" {
+					set[cause.UserId] = true
+				} else if cause.UpstreamBuild != 0 && cause.UpstreamProject != "" {
+					new, err := api.AddCauses(cause.UpstreamProject, cause.UpstreamBuild)
+					if err != nil {
+						log.Println("Could not catch causes: %v", err)
+					} else {
+						for _, new := range new {
+							set[new] = true
+						}
 					}
 				}
 			}
 		}
+		currentId, err := strconv.Atoi(statusIterator.Id)
+		if err != nil {
+			log.Println("Could not parse number: ", statusIterator.Id, err)
+			return "?"
+		}
+		id = strconv.Itoa(currentId - 1)
 	}
 	return joinKeysInCsv(set)
 }
 
 func (api *JenkinsApi) AddCauses(upstreamProject string, upstreamBuild int) (target []string, err error) {
-	link := fmt.Sprintf("%v/job/%v/%v/api/json?tree=culprits[fullName],actions[causes[userId,upstreamBuild,upstreamProject,shortDescription]]",
-		api.ServerLocation, upstreamProject, upstreamBuild)
-	if cachedValue, ok := api.cachedCauses[link]; ok {
-		return cachedValue, nil
-	}
-	resp, err := http.Get(link)
-	defer resp.Body.Close()
-	if err != nil {
-		return
-	}
-	status := JobStatus{}
-	err = json.NewDecoder(resp.Body).Decode(&status)
-	if err != nil {
-		return
-	}
-
+	status, err := api.getStatusForJob(upstreamProject, strconv.Itoa(upstreamBuild))
 	target = make([]string, 0)
 	for _, action := range status.Actions {
 		for _, cause := range action.Causes {
@@ -196,11 +203,6 @@ func (api *JenkinsApi) AddCauses(upstreamProject string, upstreamBuild int) (tar
 			}
 		}
 	}
-	log.Printf("link: %v => %v", link, target)
-	if api.cachedCauses == nil {
-		api.cachedCauses = make(map[string]([]string), 0)
-	}
-	api.cachedCauses[link] = target
 	return
 }
 

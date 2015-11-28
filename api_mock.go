@@ -76,7 +76,7 @@ func (api *MockApi) CausesFriendly(status *JobStatus) string {
 	return joinKeysInCsv(set)
 }
 
-func (api *MockApi) CausesOfPreviousFailureFriendly(job string) string {
+func (api *MockApi) CausesOfPreviousFailuresFriendly(job string) string {
 	return api.CausesFriendly(&JobStatus{})
 }
 
