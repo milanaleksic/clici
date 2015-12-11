@@ -52,6 +52,7 @@ ci: $(SOURCES)
 .PHONY: prepare
 prepare: ${GOPATH}/bin/github-release \
 	${GOPATH}/bin/goupx \
+	gtk \
 	upx
 
 ${GOPATH}/bin/goupx:
@@ -60,8 +61,15 @@ ${GOPATH}/bin/goupx:
 ${GOPATH}/bin/github-release:
 	go get github.com/aktau/github-release
 
+.PHONE: upx
 upx:
 	curl http://upx.sourceforge.net/download/upx-3.91-amd64_linux.tar.bz2 | tar xjvf - && mv upx-3.91-amd64_linux/upx upx && rm -rf upx-3.91-amd64_linux
+
+.PHONE: gtk
+gtk:
+	dpkg -s libgtk-3-dev   > /dev/null || libgtk-3-dev
+	dpkg -s libcairo2-dev  > /dev/null || libcairo2-dev
+	dpkg -s libglib2.0-dev > /dev/null || libglib2.0-dev
 
 .PHONY: clean
 clean:
