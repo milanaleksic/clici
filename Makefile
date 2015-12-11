@@ -52,6 +52,8 @@ ci: $(SOURCES)
 prepare: ${GOPATH}/bin/github-release \
 	${GOPATH}/bin/goupx \
 	${GOPATH}/src/github.com/conformal/gotk3 \
+	${GOPATH}/src/github.com/jroimartin/gocui \
+	${GOPATH}/src/github.com/mgutz/ansi \
 	gtk \
 	upx
 
@@ -63,6 +65,12 @@ ${GOPATH}/bin/github-release:
 
 ${GOPATH}/src/github.com/conformal/gotk3:
 	go get -tags gtk_3_10 github.com/conformal/gotk3/gtk
+
+${GOPATH}/src/github.com/jroimartin/gocui:
+	go get github.com/jroimartin/gocui
+
+${GOPATH}/src/github.com/mgutz/ansi:
+	go get github.com/mgutz/ansi
 
 .PHONE: upx
 upx:
