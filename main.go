@@ -15,12 +15,12 @@ type View interface {
 }
 
 type Options struct {
-	Jobs            []string
-	Server          string
-	SimpleInterface bool
-	Mock            bool
-	Refresh         time.Duration
-	DoLog           bool
+	Jobs      []string
+	Server    string
+	Interface string
+	Mock      bool
+	Refresh   time.Duration
+	DoLog     bool
 }
 
 var options Options
@@ -33,21 +33,27 @@ func (w *BlackHoleWriter) Write(p []byte) (n int, err error) {
 	return
 }
 
+const (
+	interfaceSimple   = "simple"
+	interfaceAdvanced = "advanced"
+	interfaceGui      = "gui"
+)
+
 func init() {
 	jobs := flag.String("jobs", "", "CSV of all jobs on the server you want to track")
 	doLog := flag.Bool("doLog", false, "Make a log of program execution")
 	server := flag.String("server", "http://jenkins", "URL of the Jenkins server")
-	simpleInterface := flag.Bool("simple", false, "Force simple interface (keeps feeding into console)")
+	intf := flag.String("interface", "advanced", "What interface should be used: console, advanced, gui")
 	mock := flag.Bool("mock", false, "Use mocked data to see how program behaves")
 	refresh := flag.Duration("refresh", 15*time.Second, "How often to refresh Jenkins status")
 	flag.Parse()
 	options = Options{
-		Jobs:            strings.Split(*jobs, ","),
-		Server:          *server,
-		SimpleInterface: *simpleInterface,
-		Mock:            *mock,
-		Refresh:         *refresh,
-		DoLog:           *doLog,
+		Jobs:      strings.Split(*jobs, ","),
+		Server:    *server,
+		Interface: *intf,
+		Mock:      *mock,
+		Refresh:   *refresh,
+		DoLog:     *doLog,
 	}
 }
 
@@ -110,14 +116,17 @@ func main() {
 	var feedbackChannel = make(chan Command)
 	var ui View
 	var err error
-	if options.SimpleInterface {
+	switch options.Interface {
+	case interfaceSimple:
 		ui, err = NewConsoleInterface(feedbackChannel)
-	} else {
+	case interfaceAdvanced:
 		ui, err = NewCUIInterface(feedbackChannel)
-		if err != nil {
-			log.Println("Failure to activate advanced interface", err)
-			ui, err = NewConsoleInterface(feedbackChannel)
-		}
+	case interfaceGui:
+		ui, err = NewGUIInterface(feedbackChannel)
+	}
+	if err != nil {
+		log.Println("Failure to activate advanced interface", err)
+		ui, err = NewConsoleInterface(feedbackChannel)
 	}
 	if err != nil {
 		log.Fatal("Failure to boot interface", err)
