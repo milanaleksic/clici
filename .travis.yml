@@ -1,5 +1,9 @@
 language: go
 
+dist: trusty
+
+sudo: required
+
 install: make prepare
 
 script: make ci
