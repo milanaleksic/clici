@@ -44,17 +44,9 @@ run: ${APP_NAME}
 test:
 	go test
 
-.PHONY: ci
-ci: $(SOURCES)
-	go build -o ${APP_NAME}
-
 .PHONY: prepare
 prepare: ${GOPATH}/bin/github-release \
 	${GOPATH}/bin/goupx \
-	${GOPATH}/src/github.com/conformal/gotk3 \
-	${GOPATH}/src/github.com/jroimartin/gocui \
-	${GOPATH}/src/github.com/mgutz/ansi \
-	${GOPATH}/src/github.com/skratchdot/open-golang/ \
 	gtk \
 	upx
 
@@ -63,18 +55,6 @@ ${GOPATH}/bin/goupx:
 
 ${GOPATH}/bin/github-release:
 	go get github.com/aktau/github-release
-
-${GOPATH}/src/github.com/conformal/gotk3:
-	go get -tags gtk_3_10 github.com/conformal/gotk3/gtk
-
-${GOPATH}/src/github.com/jroimartin/gocui:
-	go get github.com/jroimartin/gocui
-
-${GOPATH}/src/github.com/mgutz/ansi:
-	go get github.com/mgutz/ansi
-
-${GOPATH}/src/github.com/skratchdot/open-golang/:
-	go get github.com/skratchdot/open-golang/open
 
 .PHONE: upx
 upx:
@@ -85,7 +65,6 @@ gtk:
 	dpkg -s libgtk-3-dev   > /dev/null || libgtk-3-dev
 	dpkg -s libcairo2-dev  > /dev/null || libcairo2-dev
 	dpkg -s libglib2.0-dev > /dev/null || libglib2.0-dev
-	dpkg -s gtk+3.0        > /dev/null || gtk+3.0
 
 .PHONY: clean
 clean:
