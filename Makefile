@@ -54,6 +54,7 @@ prepare: ${GOPATH}/bin/github-release \
 	${GOPATH}/src/github.com/conformal/gotk3 \
 	${GOPATH}/src/github.com/jroimartin/gocui \
 	${GOPATH}/src/github.com/mgutz/ansi \
+	${GOPATH}/src/github.com/skratchdot/open-golang/ \
 	gtk \
 	upx
 
@@ -71,6 +72,9 @@ ${GOPATH}/src/github.com/jroimartin/gocui:
 
 ${GOPATH}/src/github.com/mgutz/ansi:
 	go get github.com/mgutz/ansi
+
+${GOPATH}/src/github.com/skratchdot/open-golang/:
+	go get github.com/skratchdot/open-golang/open
 
 .PHONE: upx
 upx:
