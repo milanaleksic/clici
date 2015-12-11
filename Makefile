@@ -52,6 +52,7 @@ ci: $(SOURCES)
 .PHONY: prepare
 prepare: ${GOPATH}/bin/github-release \
 	${GOPATH}/bin/goupx \
+    gtk \
 	upx
 
 ${GOPATH}/bin/goupx:
@@ -62,6 +63,9 @@ ${GOPATH}/bin/github-release:
 
 upx:
 	curl http://upx.sourceforge.net/download/upx-3.91-amd64_linux.tar.bz2 | tar xjvf - && mv upx-3.91-amd64_linux/upx upx && rm -rf upx-3.91-amd64_linux
+
+gtk:
+	sudo apt-get install -qq libgtk-3-0
 
 .PHONY: clean
 clean:
