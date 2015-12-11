@@ -46,7 +46,6 @@ test:
 
 .PHONY: ci
 ci: $(SOURCES)
-	go get ./...
 	go build -o ${APP_NAME}
 
 .PHONY: prepare
