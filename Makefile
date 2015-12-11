@@ -85,6 +85,7 @@ gtk:
 	dpkg -s libgtk-3-dev   > /dev/null || libgtk-3-dev
 	dpkg -s libcairo2-dev  > /dev/null || libcairo2-dev
 	dpkg -s libglib2.0-dev > /dev/null || libglib2.0-dev
+	dpkg -s gtk+3.0        > /dev/null || gtk+3.0
 
 .PHONY: clean
 clean:
