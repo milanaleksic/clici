@@ -6,3 +6,10 @@ script: make ci
 
 go:
   - 1.5.2
+
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    packages:
+    - libgtk-3-0
