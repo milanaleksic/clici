@@ -52,6 +52,7 @@ ci: $(SOURCES)
 .PHONY: prepare
 prepare: ${GOPATH}/bin/github-release \
 	${GOPATH}/bin/goupx \
+	${GOPATH}/src/github.com/conformal/gotk3 \
 	gtk \
 	upx
 
@@ -60,6 +61,9 @@ ${GOPATH}/bin/goupx:
 
 ${GOPATH}/bin/github-release:
 	go get github.com/aktau/github-release
+
+${GOPATH}/src/github.com/conformal/gotk3:
+	go get -tags gtk_3_10 github.com/conformal/gotk3/gtk
 
 .PHONE: upx
 upx:
