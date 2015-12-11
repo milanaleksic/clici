@@ -9,7 +9,5 @@ go:
 
 addons:
   apt:
-    sources:
-    - ubuntu-toolchain-r-test
     packages:
-    - libgtk-3-0
+    - libgtk-3-dev
