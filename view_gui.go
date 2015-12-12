@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/conformal/gotk3/gtk"
+	"github.com/gotk3/gotk3/gtk"
 	"log"
 )
 
@@ -30,22 +30,34 @@ func NewGUIInterface(feedbackChannel chan Command) (view *GUIInterface, err erro
 	}
 	gtk.Init(nil)
 
-	win, err := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
+	builder, err := gtk.BuilderNew()
 	if err != nil {
 		log.Fatal("Unable to create window:", err)
 	}
-	win.SetTitle("Add/Remove Widgets Example")
-	win.Connect("destroy", func() {
-		gtk.MainQuit()
-	})
 
-	win.Add(view.windowWidget())
+	err = builder.AddFromString(string(MustAsset("data/test.glade")))
+	if err != nil {
+		log.Fatal("Unable to create window:", err)
+	}
 
-	go func() {
-		win.ShowAll()
-		gtk.Main()
-		feedbackChannel <- CmdShutdown()
-	}()
+	win, err := builder.GetObject("window1")
+
+	if w, ok := win.(*gtk.Window); ok {
+		w.SetTitle("Add/Remove Widgets Example")
+		w.Connect("destroy", func() {
+			gtk.MainQuit()
+		})
+
+		go func() {
+			w.ShowAll()
+			gtk.Main()
+			feedbackChannel <- CmdShutdown()
+		}()
+
+	} else {
+		log.Fatal("Unable to create window:", err)
+	}
+
 	return
 }
 
