@@ -62,6 +62,7 @@ ${BINDATA_RELEASE_FILE}: ${SOURCES_DATA}
 
 .PHONY: ci
 ci: ${BINDATA_RELEASE_FILE} $(SOURCES)
+	go get -t -tags "gtk_3_10" github.com/gotk3/gotk3/...
 	go get ./...
 	go build -o ${APP_NAME}
 
