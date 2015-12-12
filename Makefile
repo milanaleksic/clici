@@ -60,6 +60,10 @@ ${BINDATA_RELEASE_FILE}: ${SOURCES_DATA}
 	rm -rf ${BINDATA_DEBUG_FILE}
 	go-bindata -nocompress=true -nomemcopy=true -o=${BINDATA_RELEASE_FILE} ${DATA_DIR}/...
 
+.PHONY: ci
+ci: ${BINDATA_RELEASE_FILE} $(SOURCES)
+	go build -o ${APP_NAME}
+
 .PHONY: prepare
 prepare: ${GOPATH}/bin/go-bindata \
 	${GOPATH}/bin/github-release \
