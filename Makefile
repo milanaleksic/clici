@@ -62,7 +62,7 @@ ${BINDATA_RELEASE_FILE}: ${SOURCES_DATA}
 
 .PHONY: ci
 ci: ${BINDATA_RELEASE_FILE} $(SOURCES)
-	go get ./... \
+	go get ./...
 	go build -o ${APP_NAME}
 
 .PHONY: prepare
