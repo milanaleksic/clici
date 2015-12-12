@@ -68,6 +68,7 @@ ci: ${BINDATA_RELEASE_FILE} $(SOURCES)
 prepare: ${GOPATH}/bin/go-bindata \
 	${GOPATH}/bin/github-release \
 	${GOPATH}/bin/goupx \
+	go get ./... \
 	gtk \
 	upx
 
