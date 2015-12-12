@@ -63,8 +63,8 @@ ${BINDATA_RELEASE_FILE}: ${SOURCES_DATA}
 .PHONY: ci
 ci: ${BINDATA_RELEASE_FILE} $(SOURCES)
 	go get -t -tags "gtk_3_10" github.com/gotk3/gotk3/...
-	go get -t -tags "gtk_3_10" ./...
-	go build -o ${APP_NAME}
+	go get ./...
+	go build -tags "gtk_3_10" -o ${APP_NAME}
 
 .PHONY: prepare
 prepare: ${GOPATH}/bin/go-bindata \
