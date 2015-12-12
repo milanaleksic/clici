@@ -62,13 +62,13 @@ ${BINDATA_RELEASE_FILE}: ${SOURCES_DATA}
 
 .PHONY: ci
 ci: ${BINDATA_RELEASE_FILE} $(SOURCES)
+	go get ./... \
 	go build -o ${APP_NAME}
 
 .PHONY: prepare
 prepare: ${GOPATH}/bin/go-bindata \
 	${GOPATH}/bin/github-release \
 	${GOPATH}/bin/goupx \
-	go get ./... \
 	gtk \
 	upx
 
