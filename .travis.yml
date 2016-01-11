@@ -11,9 +11,3 @@ script: make ci
 go:
   - 1.5.2
 
-addons:
-  apt:
-    packages:
-    - libgtk-3-dev
-    - libcairo2-dev
-    - libglib2.0-dev

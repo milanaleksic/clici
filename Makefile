@@ -62,15 +62,13 @@ ${BINDATA_RELEASE_FILE}: ${SOURCES_DATA}
 
 .PHONY: ci
 ci: ${BINDATA_RELEASE_FILE} $(SOURCES)
-	go get -t -tags "gtk_3_10" github.com/gotk3/gotk3/...
 	go get ./...
-	go build -tags "gtk_3_10" -o ${APP_NAME}
+	go build -o ${APP_NAME}
 
 .PHONY: prepare
 prepare: ${GOPATH}/bin/go-bindata \
 	${GOPATH}/bin/github-release \
 	${GOPATH}/bin/goupx \
-	gtk \
 	upx
 
 ${GOPATH}/bin/goupx:
@@ -84,12 +82,6 @@ ${GOPATH}/bin/go-bindata:
 
 upx:
 	curl http://upx.sourceforge.net/download/upx-3.91-amd64_linux.tar.bz2 | tar xjvf - && mv upx-3.91-amd64_linux/upx upx && rm -rf upx-3.91-amd64_linux
-
-.PHONY: gtk
-gtk:
-	dpkg -s libgtk-3-dev   > /dev/null || libgtk-3-dev
-	dpkg -s libcairo2-dev  > /dev/null || libcairo2-dev
-	dpkg -s libglib2.0-dev > /dev/null || libglib2.0-dev
 
 .PHONY: clean
 clean:

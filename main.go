@@ -36,14 +36,13 @@ func (w *BlackHoleWriter) Write(p []byte) (n int, err error) {
 const (
 	interfaceSimple   = "simple"
 	interfaceAdvanced = "advanced"
-	interfaceGui      = "gui"
 )
 
 func init() {
 	jobs := flag.String("jobs", "", "CSV of all jobs on the server you want to track")
 	doLog := flag.Bool("doLog", false, "Make a log of program execution")
 	server := flag.String("server", "http://jenkins", "URL of the Jenkins server")
-	intf := flag.String("interface", "advanced", "What interface should be used: console, advanced, gui")
+	intf := flag.String("interface", "advanced", "What interface should be used: console, advanced")
 	mock := flag.Bool("mock", false, "Use mocked data to see how program behaves")
 	refresh := flag.Duration("refresh", 15*time.Second, "How often to refresh Jenkins status")
 	flag.Parse()
@@ -121,8 +120,6 @@ func main() {
 		ui, err = NewConsoleInterface(feedbackChannel)
 	case interfaceAdvanced:
 		ui, err = NewCUIInterface(feedbackChannel)
-	case interfaceGui:
-		ui, err = NewGUIInterface(feedbackChannel)
 	}
 	if err != nil {
 		log.Println("Failure to activate advanced interface", err)
