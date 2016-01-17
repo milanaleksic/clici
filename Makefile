@@ -46,7 +46,7 @@ run: ${APP_NAME}
 
 .PHONY: test
 test:
-	go test
+	go test -v
 
 .PHONY: ci
 ci: $(SOURCES)
