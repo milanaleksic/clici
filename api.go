@@ -88,10 +88,10 @@ func (api *JenkinsApi) getStatusForJob(job string, id string) (status *JobStatus
 		api.ServerLocation, job, id)
 	log.Printf("Visiting %v", link)
 	resp, err := http.Get(link)
-	defer resp.Body.Close()
 	if err != nil {
 		return
 	}
+	defer resp.Body.Close()
 	result := &JobStatus{}
 	err = json.NewDecoder(resp.Body).Decode(&result)
 	if err == nil && id != "lastBuild" && id != "lastCompletedBuild" {
@@ -227,10 +227,10 @@ func (api *JenkinsApi) GetFailedTestList(job string) (testCaseResult []Case, err
 	link := fmt.Sprintf("%v/job/%s/lastFailedBuild/testReport/api/json?tree=suites[cases[className,name,status]]", api.ServerLocation, job)
 	log.Printf("Visiting %s\n", link)
 	resp, err := http.Get(link)
-	defer resp.Body.Close()
 	if err != nil {
 		return
 	}
+	defer resp.Body.Close()
 	var received TestCaseResult
 	err = json.NewDecoder(resp.Body).Decode(&received)
 	if err != nil {
