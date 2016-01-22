@@ -52,7 +52,7 @@ type Controller struct {
 
 func (controller *Controller) RefreshNodeInformation() {
 	log.Println("Controller: RefreshNodeInformation")
-	state := controller.state
+	state := &controller.state
 	resultFromJenkins, err := controller.API.GetRunningJobs()
 	if err != nil {
 		log.Printf("Error state: %v", err)
@@ -69,6 +69,7 @@ func (controller *Controller) updateView() {
 
 func (controller *Controller) explainProperState(resultFromJenkins *JenkinsStatus) {
 	state := &controller.state
+	state.Error = nil
 	state.JobStates = make([]JobState, 0)
 	if len(controller.KnownJobs) == 1 && controller.KnownJobs[0] == "" {
 		for _, item := range resultFromJenkins.JobBuildStatus {
