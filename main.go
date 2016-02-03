@@ -40,6 +40,9 @@ const (
 	interfaceAdvanced = "advanced"
 )
 
+var version *bool
+var Version = "undefined"
+
 func init() {
 	jobs := flag.String("jobs", "", "CSV of all jobs on the server you want to track")
 	doLog := flag.Bool("doLog", false, "Make a log of program execution")
@@ -47,6 +50,7 @@ func init() {
 	intf := flag.String("interface", "advanced", "What interface should be used: console, advanced")
 	mock := flag.Bool("mock", false, "Use mocked data to see how program behaves")
 	refresh := flag.Duration("refresh", 15*time.Second, "How often to refresh Jenkins status")
+	version = flag.Bool("version", false, "Get application version")
 	flag.Parse()
 	options = Options{
 		Jobs:      strings.Split(*jobs, ","),
@@ -115,6 +119,10 @@ func mainLoop(feedbackChannel chan Command, ui *View) {
 }
 
 func main() {
+	if *version {
+		fmt.Printf("jenkins_ping version: %v\n", Version)
+		return
+	}
 	var feedbackChannel = make(chan Command)
 	var ui View
 	var err error
