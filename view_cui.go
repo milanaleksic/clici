@@ -252,13 +252,12 @@ func (ui *CUIInterface) helpDialog() {
 			check_cui(err)
 			v.FgColor = gocui.ColorWhite
 			v.Overwrite = false
-			fmt.Fprintln(v, `
-			              q - Quit
-			           <id> - Open Last Job URL
-			         p+<id> - Open Last Completed Job URL
-			         t+<id> - Show Test failures (NYI)
-			          Enter - Close Help
-			`)
+			fmt.Fprintln(v, "" +
+			"              q - Quit\n" +
+			"           <id> - Open Last Job URL\n" +
+			"         p+<id> - Open Last Completed Job URL\n" +
+			"         t+<id> - Show Test failures (NYI)\n" +
+			"          Enter - Close Help\n")
 		}
 		return nil
 	})
