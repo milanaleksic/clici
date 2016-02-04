@@ -34,3 +34,27 @@ func joinKeysInCsv(m map[string]bool) string {
 	sort.Strings(b)
 	return strings.Join(b, sep)
 }
+
+func buildingChar() string {
+	if options.AvoidUnicode {
+		return "B"
+	} else {
+		return "⟳"
+	}
+}
+
+func failedChar() string {
+	if options.AvoidUnicode {
+		return "X"
+	} else {
+		return "✖"
+	}
+}
+
+func successChar() string {
+	if options.AvoidUnicode {
+		return "V"
+	} else {
+		return "✓"
+	}
+}

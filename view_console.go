@@ -39,11 +39,11 @@ func (ui *ConsoleInterface) friendlyCurrentStatus(buildStatus JobState) string {
 	}
 	switch {
 	case buildStatus.Building:
-		return withResetOnEnd(blueFormat("⟳"))
+		return withResetOnEnd(blueFormat(buildingChar()))
 	case buildStatus.PreviousState == Failure:
-		return withResetOnEnd(redFormat("✖"))
+		withResetOnEnd(redFormat(failedChar()))
 	case buildStatus.PreviousState == Success:
-		return withResetOnEnd(greenFormat("✓"))
+		return withResetOnEnd(greenFormat(successChar()))
 	}
 	return withResetOnEnd(redFormat("?"))
 }
@@ -79,9 +79,9 @@ func (ui *ConsoleInterface) previousStateFriendlyIfBuilding(state *JobState) str
 	if state.Building {
 		switch {
 		case state.PreviousState == Success:
-			return withResetOnEnd(greenFormat("✓"))
+			return withResetOnEnd(greenFormat(successChar()))
 		case state.PreviousState == Failure:
-			return withResetOnEnd(redFormat("✖"))
+			return withResetOnEnd(redFormat(failedChar()))
 		}
 	}
 	return ""

@@ -18,9 +18,9 @@ type CUIInterface struct {
 func friendlyKnownStatus(buildStatus JobState) string {
 	switch {
 	case buildStatus.PreviousState == Failure:
-		return "✖"
+		return failedChar()
 	case buildStatus.PreviousState == Success:
-		return "✓"
+		return successChar()
 	}
 	return ""
 }
@@ -77,7 +77,7 @@ func (ui *CUIInterface) showAJobDetailColumns(jobState *JobState, index int, len
 		if jobState.Building {
 			switch {
 			case jobState.Building:
-				fmt.Fprint(v, "⟳")
+				fmt.Fprint(v, buildingChar())
 			}
 		}
 	}

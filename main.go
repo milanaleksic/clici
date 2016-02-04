@@ -3,12 +3,12 @@ package main
 import (
 	"errors"
 	"flag"
+	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
-	"path/filepath"
-	"fmt"
 )
 
 type View interface {
@@ -17,12 +17,13 @@ type View interface {
 }
 
 type Options struct {
-	Jobs      []string
-	Server    string
-	Interface string
-	Mock      bool
-	Refresh   time.Duration
-	DoLog     bool
+	Jobs         []string
+	Server       string
+	Interface    string
+	Mock         bool
+	Refresh      time.Duration
+	DoLog        bool
+	AvoidUnicode bool
 }
 
 var options Options
@@ -50,15 +51,17 @@ func init() {
 	intf := flag.String("interface", "advanced", "What interface should be used: console, advanced")
 	mock := flag.Bool("mock", false, "Use mocked data to see how program behaves")
 	refresh := flag.Duration("refresh", 15*time.Second, "How often to refresh Jenkins status")
+	avoidUnicode := flag.Bool("avoidUnicode", false, "Will avoid usage of Unicode characters in terminal. V will mean Success, X will mean Failure, B will mean building")
 	version = flag.Bool("version", false, "Get application version")
 	flag.Parse()
 	options = Options{
-		Jobs:      strings.Split(*jobs, ","),
-		Server:    *server,
-		Interface: *intf,
-		Mock:      *mock,
-		Refresh:   *refresh,
-		DoLog:     *doLog,
+		Jobs:         strings.Split(*jobs, ","),
+		Server:       *server,
+		Interface:    *intf,
+		Mock:         *mock,
+		Refresh:      *refresh,
+		DoLog:        *doLog,
+		AvoidUnicode: *avoidUnicode,
 	}
 }
 
