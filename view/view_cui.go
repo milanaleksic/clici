@@ -19,7 +19,7 @@ type CUIInterface struct {
 }
 
 func checkCui(err error) {
-	if err != gocui.ErrorUnkView {
+	if err != gocui.ErrUnknownView {
 		log.Panicf("Unexpected error occured: %v", err)
 	}
 }
@@ -165,7 +165,7 @@ func NewCUIInterface(feedbackChannel chan Command) (view *CUIInterface, err erro
 	view.setKeyBindings()
 	go func() {
 		err = view.gui.MainLoop()
-		if err != nil && err != gocui.Quit {
+		if err != nil && err != gocui.ErrQuit {
 			log.Panicln(err)
 		}
 		view.gui.Close()
@@ -182,7 +182,7 @@ func (ui *CUIInterface) Close() {
 
 func (ui *CUIInterface) setKeyBindings() {
 	quit := func(g *gocui.Gui, v *gocui.View) error {
-		return gocui.Quit
+		return gocui.ErrQuit
 	}
 	if err := ui.gui.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, quit); err != nil {
 		return
