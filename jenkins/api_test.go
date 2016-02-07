@@ -1,8 +1,9 @@
-package main
+package jenkins
+
 import (
-	"testing"
 	"encoding/json"
 	"strings"
+	"testing"
 )
 
 func TestParsingBuildStatus(t *testing.T) {
@@ -15,7 +16,7 @@ func TestParsingBuildStatus(t *testing.T) {
   ]
 }
 `
-	status := JenkinsStatus{}
+	status := Status{}
 	err := json.NewDecoder(strings.NewReader(statusWire)).Decode(&status)
 	if err != nil {
 		t.Fatal(err)
@@ -24,7 +25,6 @@ func TestParsingBuildStatus(t *testing.T) {
 		t.Fatal("Did not parse out the job!")
 	}
 }
-
 
 func TestParsingStatusFinished(t *testing.T) {
 	var statusWire = `{
@@ -41,7 +41,7 @@ func TestParsingStatusFinished(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if status.Building  {
+	if status.Building {
 		t.Fatal("Did not parse result")
 	}
 	if status.Culprits[0].FullName != "milan" {
@@ -73,7 +73,7 @@ func TestParsingStatusActive(t *testing.T) {
 	if status.Timestamp != 1448028238654 {
 		t.Fatal("Did not parse duration")
 	}
-	if !status.Building  {
+	if !status.Building {
 		t.Fatal("Did not parse Building")
 	}
 }

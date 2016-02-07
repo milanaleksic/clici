@@ -2,58 +2,26 @@ package main
 
 import (
 	"fmt"
-	"github.com/skratchdot/open-golang/open"
 	"log"
-	"strings"
 	"time"
+
+	"github.com/milanaleksic/jenkins_ping/jenkins"
+	"github.com/milanaleksic/jenkins_ping/model"
+	"github.com/milanaleksic/jenkins_ping/view"
+	"github.com/skratchdot/open-golang/open"
 )
 
-type State struct {
-	JobStates   []JobState
-	FailedTests []string
-	Error       error
-	ShowHelp    bool
-}
-
-func (state *State) MaxLengthOfName() (lengthForJobNames int) {
-	lengthForJobNames = 10
-	for _, jobState := range state.JobStates {
-		if len(jobState.JobName) > lengthForJobNames {
-			lengthForJobNames = len(jobState.JobName)
-		}
-	}
-	return
-}
-
-type BuildStatus byte
-
-const (
-	Success BuildStatus = iota
-	Failure
-	Unknown
-)
-
-type JobState struct {
-	JobName          string
-	CulpritsFriendly string
-	PreviousState    BuildStatus
-	Error            error
-	CausesFriendly   string
-	Building         bool
-	Time             string
-}
-
-type Controller struct {
+type controller struct {
 	KnownJobs []string
-	View      View
-	API       Api
-	state     State
+	View      view.View
+	API       jenkins.API
+	state     model.State
 }
 
-func (controller *Controller) RefreshNodeInformation() {
+func (controller *controller) RefreshNodeInformation() {
 	log.Println("Controller: RefreshNodeInformation")
 	state := &controller.state
-	resultFromJenkins, err := controller.API.GetRunningJobs()
+	resultFromJenkins, err := controller.API.GetKnownJobs()
 	if err != nil {
 		log.Printf("Error state: %v", err)
 		state.Error = err
@@ -63,35 +31,35 @@ func (controller *Controller) RefreshNodeInformation() {
 	controller.updateView()
 }
 
-func (controller *Controller) updateView() {
+func (controller *controller) updateView() {
 	controller.View.PresentState(&controller.state)
 }
 
-func (controller *Controller) explainProperState(resultFromJenkins *JenkinsStatus) {
+func (controller *controller) explainProperState(resultFromJenkins *jenkins.Status) {
 	state := &controller.state
 	state.Error = nil
-	state.JobStates = make([]JobState, 0)
+	state.JobStates = make([]model.JobState, 0)
 	if len(controller.KnownJobs) == 1 && controller.KnownJobs[0] == "" {
 		for _, item := range resultFromJenkins.JobBuildStatus {
-			state.JobStates = append(state.JobStates, JobState{
+			state.JobStates = append(state.JobStates, model.JobState{
 				JobName:       item.Name,
-				PreviousState: controller.previousStateFromColor(item.Color),
+				PreviousState: model.BuildStatusFromColor(item.Color),
 			})
 		}
 	} else {
 		for _, jobWeCareAbout := range controller.KnownJobs {
 			for _, item := range resultFromJenkins.JobBuildStatus {
 				if jobWeCareAbout == item.Name {
-					state.JobStates = append(state.JobStates, JobState{
+					state.JobStates = append(state.JobStates, model.JobState{
 						JobName:       item.Name,
-						PreviousState: controller.previousStateFromColor(item.Color),
+						PreviousState: model.BuildStatusFromColor(item.Color),
 					})
 				}
 			}
 		}
 	}
 
-	for ind, _ := range state.JobStates {
+	for ind := range state.JobStates {
 		iterState := &state.JobStates[ind]
 		status, err := controller.API.GetCurrentStatus(iterState.JobName)
 		if err == nil {
@@ -105,45 +73,34 @@ func (controller *Controller) explainProperState(resultFromJenkins *JenkinsStatu
 	}
 }
 
-func (controller *Controller) explainTime(status JobStatus) string {
+func (controller *controller) explainTime(status jenkins.JobStatus) string {
 	timeLeft := status.EstimatedDuration/1000/60 - (time.Now().UnixNano()/1000/1000-status.Timestamp)/1000/60
 	if timeLeft >= 0 {
 		return fmt.Sprintf("%v min more", timeLeft)
-	} else {
-		return fmt.Sprintf("%v min longer than expected", -timeLeft)
 	}
+	return fmt.Sprintf("%v min longer than expected", -timeLeft)
 }
 
-func (controller *Controller) previousStateFromColor(color string) BuildStatus {
-	if strings.Index(color, "blue") == 0 {
-		return Success
-	} else if strings.Index(color, "red") == 0 {
-		return Failure
-	} else {
-		log.Printf("Unknown color: %v\n", color)
-		return Unknown
-	}
+func (controller *controller) VisitCurrentJob(id int) {
+	controller.visitURL(id, controller.API.GetLastBuildURLForJob)
 }
 
-func (controller *Controller) VisitCurrentJob(id int) {
+func (controller *controller) VisitPreviousJob(id int) {
+	controller.visitURL(id, controller.API.GetLastCompletedBuildURLForJob)
+}
+
+func (controller *controller) visitURL(id int, urlFromJobName func(job string) string) {
 	if int(id) >= len(controller.state.JobStates) {
 		log.Printf("Unsupported index (out of bounds of known jobs): %v (max is %v)", id, len(controller.state.JobStates)-1)
 	} else {
-		url := controller.API.GetLastBuildUrlForJob(controller.state.JobStates[id].JobName)
-		open.Run(url)
+		url := urlFromJobName(controller.state.JobStates[id].JobName)
+		if err := open.Run(url); err != nil {
+			log.Printf("Could not open URL %s!, err: %v", url, err)
+		}
 	}
 }
 
-func (controller *Controller) VisitPreviousJob(id int) {
-	if int(id) >= len(controller.state.JobStates) {
-		log.Printf("Unsupported index (out of bounds of known jobs): %v (max is %v)", id, len(controller.state.JobStates)-1)
-	} else {
-		url := controller.API.GetLastCompletedBuildUrlForJob(controller.state.JobStates[id].JobName)
-		open.Run(url)
-	}
-}
-
-func (controller *Controller) ShowTests(id int) {
+func (controller *controller) ShowTests(id int) {
 	log.Println("Controller: ShowTests")
 	failedTests, err := controller.API.GetFailedTestList(controller.state.JobStates[id].JobName)
 	if err != nil {
@@ -159,13 +116,13 @@ func (controller *Controller) ShowTests(id int) {
 	controller.updateView()
 }
 
-func (controller *Controller) ShowHelp() {
+func (controller *controller) ShowHelp() {
 	log.Println("Controller: ShowHelp")
 	controller.state.ShowHelp = true
 	controller.updateView()
 }
 
-func (controller *Controller) RemoveModals() {
+func (controller *controller) RemoveModals() {
 	log.Println("Controller: RemoveModals")
 	controller.state.ShowHelp = false
 	controller.state.Error = nil

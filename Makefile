@@ -10,6 +10,10 @@ ${APP_NAME}: $(SOURCES)
 	go get ./...
 	go build -ldflags '-X main.Version=${TAG}' -o ${APP_NAME}
 
+.PHONY: metalinter
+metalinter: ${APP_NAME}
+	gometalinter --deadline=2m ./...
+
 .PHONY: deploy
 deploy: $(SOURCES)
 ifndef GITHUB_TOKEN
@@ -51,12 +55,18 @@ test:
 .PHONY: ci
 ci: $(SOURCES)
 	go get ./...
+	$(MAKE) metalinter
 	go build -ldflags '-X main.Version=${TAG}' -o ${APP_NAME}
 
 .PHONY: prepare
 prepare: ${GOPATH}/bin/github-release \
 	${GOPATH}/bin/goupx \
+	${GOPATH}/bin/gometalinter \
 	upx
+
+${GOPATH}/bin/gometalinter:
+	go get github.com/alecthomas/gometalinter
+	gometalinter --install --update
 
 ${GOPATH}/bin/goupx:
 	go get github.com/pwaller/goupx
