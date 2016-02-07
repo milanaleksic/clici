@@ -29,7 +29,7 @@ func CmdShutdown() Command {
 
 // CmdClose creates a new command of group CmdShowHelpGroup
 func CmdClose() Command {
-	return Command{Group: CmdShowHelpGroup}
+	return Command{Group: CmdCloseGroup}
 }
 
 // CmdShowHelp creates a new command of group CmdShowHelpGroup
