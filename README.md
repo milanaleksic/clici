@@ -1,5 +1,7 @@
 # Jenkins Ping
 
+[![Build Status](https://travis-ci.org/milanaleksic/jenkins_ping.svg?branch=master)](https://travis-ci.org/milanaleksic/jenkins_ping)
+
 Command line for Jenkins pipeline overview
 
 ![Current state](current_state.png "Current state")
