@@ -75,10 +75,18 @@ func (controller *controller) explainProperState(resultFromJenkins *jenkins.Stat
 
 func (controller *controller) explainTime(status jenkins.JobStatus) string {
 	timeLeft := status.EstimatedDuration/1000/60 - (time.Now().UnixNano()/1000/1000-status.Timestamp)/1000/60
-	if timeLeft >= 0 {
-		return fmt.Sprintf("%v min more", timeLeft)
+	if status.Building {
+		if timeLeft >= 0 {
+			return fmt.Sprintf("%v min more", timeLeft)
+		}
+		return fmt.Sprintf("%v min longer than expected", -timeLeft)
+	} else {
+		if timeLeft < 0 {
+			return fmt.Sprintf("%v min ago", -timeLeft)
+		} else {
+			return fmt.Sprintf("will have finished (hhgttg or bad data) %v min ago", timeLeft)
+		}
 	}
-	return fmt.Sprintf("%v min longer than expected", -timeLeft)
 }
 
 func (controller *controller) VisitCurrentJob(id int) {

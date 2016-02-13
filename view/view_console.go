@@ -71,9 +71,11 @@ func (ui *ConsoleInterface) PresentState(state *model.State) {
 					jobState.Time, ui.previousStateFriendlyIfBuilding(&jobState), jobState.CulpritsFriendly)
 			} else {
 				if jobState.PreviousState == model.Success {
-					output = output + fmt.Sprintf("%30v %v %v\n", yellowFormat(jobState.JobName), ui.friendlyCurrentStatus(jobState), yellowFormat(jobState.CausesFriendly))
+					output = output + fmt.Sprintf("%30v %v by %v (%v)\n", yellowFormat(jobState.JobName), ui.friendlyCurrentStatus(jobState), yellowFormat(jobState.CausesFriendly),
+						jobState.Time)
 				} else {
-					output = output + fmt.Sprintf("%30v %v %v\n", yellowFormat(jobState.JobName), ui.friendlyCurrentStatus(jobState), redFormat(jobState.CausesFriendly))
+					output = output + fmt.Sprintf("%30v %v by %v (%v)\n", yellowFormat(jobState.JobName), ui.friendlyCurrentStatus(jobState), redFormat(jobState.CausesFriendly),
+						jobState.Time)
 				}
 			}
 		}

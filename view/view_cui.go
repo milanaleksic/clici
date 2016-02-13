@@ -132,10 +132,10 @@ func (ui *CUIInterface) showJobDescriptionColumn(jobState *model.JobState, index
 		} else {
 			if jobState.PreviousState == model.Success {
 				v.FgColor = gocui.ColorGreen
-				fmt.Fprintf(v, "%v", jobState.CausesFriendly)
+				fmt.Fprintf(v, "%v (%v)", jobState.CausesFriendly, jobState.Time)
 			} else {
 				v.FgColor = gocui.ColorRed | gocui.AttrBold
-				fmt.Fprintf(v, "%v; failed by %v", jobState.CausesFriendly, jobState.CulpritsFriendly)
+				fmt.Fprintf(v, "%v (%v); failed by %v", jobState.CausesFriendly, jobState.Time, jobState.CulpritsFriendly)
 			}
 		}
 	}
