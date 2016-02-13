@@ -58,6 +58,7 @@ test:
 ci: ${BINDATA_RELEASE_FILE} $(SOURCES)
 	go get ./...
 	$(MAKE) metalinter
+	go test ./...
 	go build -ldflags '-X main.Version=${TAG}' -o ${APP_NAME}
 
 ${BINDATA_DEBUG_FILE}: ${SOURCES_DATA}
