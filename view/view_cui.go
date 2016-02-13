@@ -30,6 +30,8 @@ func friendlyKnownStatus(buildStatus model.JobState) string {
 		return failedChar()
 	case buildStatus.PreviousState == model.Success:
 		return successChar()
+	case buildStatus.PreviousState == model.Undefined:
+		return undefinedChar()
 	}
 	return ""
 }
@@ -106,6 +108,10 @@ func (ui *CUIInterface) showJobStatusColumn(jobState *model.JobState, index int,
 			v.FgColor = gocui.ColorRed | gocui.AttrBold
 		case jobState.PreviousState == model.Success:
 			v.FgColor = gocui.ColorGreen | gocui.AttrBold
+		case jobState.PreviousState == model.Undefined:
+			v.FgColor = gocui.ColorMagenta | gocui.AttrBold
+		case jobState.PreviousState == model.Unknown:
+			v.FgColor = gocui.ColorWhite | gocui.AttrBold
 		default:
 			v.FgColor = gocui.ColorWhite | gocui.AttrBold
 		}
@@ -275,7 +281,7 @@ func (ui *CUIInterface) helpDialog() {
 				"              q - Quit\n"+
 				"           <id> - Open Last Job URL\n"+
 				"         p+<id> - Open Last Completed Job URL\n"+
-				"         t+<id> - Show Test failures (NYI)\n"+
+				"         t+<id> - Show Test failures\n"+
 				"          Enter - Close Help\n")
 		}
 		return nil

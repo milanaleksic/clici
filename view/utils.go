@@ -27,3 +27,17 @@ func successChar() string {
 	}
 	return "✓"
 }
+
+func undefinedChar() string {
+	if AvoidUnicode {
+		return "U"
+	}
+	return "⁈"
+}
+
+func unknownChar() string {
+	if AvoidUnicode {
+		return "?"
+	}
+	return "❓"
+}

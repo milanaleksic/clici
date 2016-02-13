@@ -12,7 +12,9 @@ import (
 
 var greenFormat = ansi.ColorFunc("green+b+h")
 var blueFormat = ansi.ColorFunc("blue+b+h")
-var redFormat = ansi.ColorFunc("red+b+h")
+var magentaFormat = ansi.ColorFunc("magenta+b")
+var whiteFormat = ansi.ColorFunc("white+b+h")
+var redFormat = ansi.ColorFunc("red+b")
 var yellowFormat = ansi.ColorFunc("yellow+b+h")
 var resetFormat = ansi.ColorCode("reset")
 
@@ -41,18 +43,27 @@ func NewConsoleInterface(feedbackChannel chan Command) (view *ConsoleInterface, 
 }
 
 func (ui *ConsoleInterface) friendlyCurrentStatus(buildStatus model.JobState) string {
-	var withResetOnEnd = func(withFormatting string) string {
-		return withFormatting + resetFormat
-	}
 	switch {
 	case buildStatus.Building:
 		return withResetOnEnd(blueFormat(buildingChar()))
+	default:
+		return friendlyPreviousState(&buildStatus)
+	}
+}
+
+func friendlyPreviousState(buildStatus *model.JobState) string {
+	switch {
 	case buildStatus.PreviousState == model.Failure:
-		withResetOnEnd(redFormat(failedChar()))
+		return withResetOnEnd(redFormat(failedChar()))
 	case buildStatus.PreviousState == model.Success:
 		return withResetOnEnd(greenFormat(successChar()))
+	case buildStatus.PreviousState == model.Undefined:
+		return withResetOnEnd(magentaFormat(undefinedChar()))
+	case buildStatus.PreviousState == model.Unknown:
+		return withResetOnEnd(whiteFormat(unknownChar()))
+	default:
+		return withResetOnEnd(whiteFormat(unknownChar()))
 	}
-	return withResetOnEnd(redFormat("?"))
 }
 
 // PresentState comes from View and is a call that is used to ask the view
@@ -68,8 +79,10 @@ func (ui *ConsoleInterface) PresentState(state *model.State) {
 				output = output + fmt.Sprintf("%30v %v%v, %v %v\n", yellowFormat(jobState.JobName), ui.friendlyCurrentStatus(jobState), redFormat(", but REST processing had an error: "), jobState.Error, resetFormat)
 			} else if jobState.Building {
 				output = output + fmt.Sprintf("%30v %v by %v (%v) was %v by %v\n", yellowFormat(jobState.JobName), ui.friendlyCurrentStatus(jobState), yellowFormat(jobState.CausesFriendly),
-					jobState.Time, ui.previousStateFriendlyIfBuilding(&jobState), jobState.CulpritsFriendly)
+					jobState.Time, friendlyPreviousState(&jobState), jobState.CulpritsFriendly)
 			} else {
+				output = output + fmt.Sprintf("%30v %v by %v (%v)\n", yellowFormat(jobState.JobName), ui.friendlyCurrentStatus(jobState), yellowFormat(jobState.CausesFriendly),
+					jobState.Time)
 				if jobState.PreviousState == model.Success {
 					output = output + fmt.Sprintf("%30v %v by %v (%v)\n", yellowFormat(jobState.JobName), ui.friendlyCurrentStatus(jobState), yellowFormat(jobState.CausesFriendly),
 						jobState.Time)
@@ -83,23 +96,12 @@ func (ui *ConsoleInterface) PresentState(state *model.State) {
 	fmt.Printf("%vStatus fetched @ %v\n", output, time.Now().Format(time.RFC822))
 }
 
-func (ui *ConsoleInterface) previousStateFriendlyIfBuilding(state *model.JobState) string {
-	var withResetOnEnd = func(withFormatting string) string {
-		return withFormatting + resetFormat
-	}
-	if state.Building {
-		switch {
-		case state.PreviousState == model.Success:
-			return withResetOnEnd(greenFormat(successChar()))
-		case state.PreviousState == model.Failure:
-			return withResetOnEnd(redFormat(failedChar()))
-		}
-	}
-	return ""
-}
-
 // Close comes from View and is a call that is used to ask the view
 // to close itself when application goes down as a result of shutdown command
 func (ui *ConsoleInterface) Close() {
 	// no operation
+}
+
+func withResetOnEnd(withFormatting string) string {
+	return withFormatting + resetFormat
 }

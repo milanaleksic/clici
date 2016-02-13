@@ -24,10 +24,13 @@ func (api *MockAPI) GetKnownJobs() (resultFromJenkins *Status, err error) {
 	resultFromJenkins.JobBuildStatus = make([]jobBuildStatus, 0)
 	for i := 0; i < 12; i++ {
 		var color string
-		if rand.Intn(2) == 0 {
+		switch rand.Intn(3) {
+		case 0:
 			color = "blue"
-		} else {
+		case 1:
 			color = "red"
+		case 2:
+			color = "aborted"
 		}
 		resultFromJenkins.JobBuildStatus = append(resultFromJenkins.JobBuildStatus, jobBuildStatus{
 			Name:  fmt.Sprintf("a_test_job_long_name%v", i),
