@@ -9,6 +9,7 @@ import (
 	"github.com/milanaleksic/jenkins_ping/model"
 	"github.com/milanaleksic/jenkins_ping/view"
 	"github.com/skratchdot/open-golang/open"
+	"github.com/dustin/go-humanize"
 )
 
 type controller struct {
@@ -74,18 +75,14 @@ func (controller *controller) explainProperState(resultFromJenkins *jenkins.Stat
 }
 
 func (controller *controller) explainTime(status jenkins.JobStatus) string {
-	timeLeft := status.EstimatedDuration/1000/60 - (time.Now().UnixNano()/1000/1000-status.Timestamp)/1000/60
+	secLeft := status.EstimatedDuration/1000/60 - (time.Now().UnixNano()/1000/1000-status.Timestamp)/1000
 	if status.Building {
-		if timeLeft >= 0 {
-			return fmt.Sprintf("%v min more", timeLeft)
+		if secLeft >= 0 {
+			return fmt.Sprintf("%v min more", secLeft/60)
 		}
-		return fmt.Sprintf("%v min longer than expected", -timeLeft)
+		return fmt.Sprintf("%v min longer than expected", -secLeft/60)
 	} else {
-		if timeLeft < 0 {
-			return fmt.Sprintf("%v min ago", -timeLeft)
-		} else {
-			return fmt.Sprintf("will have finished (hhgttg or bad data) %v min ago", timeLeft)
-		}
+		return humanize.Time(time.Now().Add(time.Duration(secLeft) * time.Second))
 	}
 }
 
