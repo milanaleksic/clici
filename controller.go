@@ -5,11 +5,11 @@ import (
 	"log"
 	"time"
 
+	"github.com/dustin/go-humanize"
 	"github.com/milanaleksic/jenkins_ping/jenkins"
 	"github.com/milanaleksic/jenkins_ping/model"
 	"github.com/milanaleksic/jenkins_ping/view"
 	"github.com/skratchdot/open-golang/open"
-	"github.com/dustin/go-humanize"
 )
 
 type controller struct {
@@ -71,6 +71,9 @@ func (controller *controller) explainProperState(resultFromJenkins *jenkins.Stat
 		} else {
 			iterState.Error = err
 		}
+	}
+	if len(state.JobStates) == 0 {
+		state.Error = fmt.Errorf("No jobs from %v matched amongst following available jobs: %v", controller.KnownJobs, resultFromJenkins)
 	}
 }
 

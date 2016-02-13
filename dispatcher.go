@@ -13,7 +13,7 @@ type dispatcher struct {
 }
 
 func (dispatcher *dispatcher) mainLoop() {
-	ticker := time.NewTicker(options.Refresh)
+	ticker := time.NewTicker(options.Application.Refresh.Duration)
 	defer ticker.Stop()
 	firstRun := make(chan bool, 1)
 	firstRun <- true

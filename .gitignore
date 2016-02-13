@@ -2,3 +2,6 @@ jenkins_ping
 jenkins_ping.exe
 jenkins_ping.log
 upx
+bindata_debug.go
+bindata_release.go
+/jenkins_ping.toml

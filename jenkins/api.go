@@ -19,6 +19,18 @@ type API interface {
 	GetFailedTestList(job string) (testCaseResult []TestCase, err error)
 }
 
+// NewMockAPI creates mocking API, usable for testing only
+func NewMockAPI() API {
+	return &MockAPI{}
+}
+
+// NewAPI will create a real API, which will communicate with a certain Jenkins server
+func NewAPI(location string) API {
+	return &ServerAPI{
+		ServerLocation: location,
+	}
+}
+
 // ServerAPI is a real-life implementation of the API which connects to a real Jenkins server.
 // Use the given "ServerLocation" field to set the location of the server.
 type ServerAPI struct {

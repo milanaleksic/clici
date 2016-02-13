@@ -1,0 +1,40 @@
+[application]
+# Use mocked data to see how program behaves
+mock=false
+
+# How often to refresh Jenkins status
+refresh="15s"
+
+# Make a log of program execution
+doLog=false
+
+
+[jenkins]
+# URL of the Jenkins server
+location = "http://jenkins"
+
+# CSV of all jobs on the server you want to track
+jobs = [
+    "a_test_job_long_name0",
+    "a_test_job_long_name1",
+    "a_test_job_long_name2",
+    "a_test_job_long_name3",
+    "a_test_job_long_name4",
+    "a_test_job_long_name5",
+    "a_test_job_long_name6",
+    "a_test_job_long_name7",
+    "a_test_job_long_name8",
+    "a_test_job_long_name9",
+    "a_test_job_long_name10",
+    "a_test_job_long_name11"
+]
+
+
+[interface]
+# What interface should be used: console, advanced"
+#mode="console"
+mode="advanced"
+
+# Will avoid usage of Unicode characters in terminal. V will mean Success, X will mean Failure, B will mean building
+# It is recommended to set to true for Windows
+avoidUnicode=false

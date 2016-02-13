@@ -1,21 +1,23 @@
 APP_NAME := jenkins_ping
 GOPATH := ${GOPATH}
 SOURCEDIR = .
-
-SOURCES := $(shell find $(SOURCEDIR) -name '*.go')
+DATA_DIR := ./data
+BINDATA_DEBUG_FILE := $(SOURCEDIR)/bindata_debug.go
+BINDATA_RELEASE_FILE := $(SOURCEDIR)/bindata_release.go
+SOURCES := $(shell find $(SOURCEDIR) -name '*.go' -not -path '${BINDATA_DEBUG_FILE}' -not -path '${BINDATA_RELEASE_FILE}')
 
 .DEFAULT_GOAL: ${APP_NAME}
 
-${APP_NAME}: $(SOURCES)
+${APP_NAME}: ${BINDATA_DEBUG_FILE} $(SOURCES)
 	go get ./...
 	go build -ldflags '-X main.Version=${TAG}' -o ${APP_NAME}
 
 .PHONY: metalinter
 metalinter: ${APP_NAME}
-	gometalinter --deadline=2m ./...
+	gometalinter --exclude=bindata_* --deadline=2m ./...
 
 .PHONY: deploy
-deploy: $(SOURCES)
+deploy: ${BINDATA_RELEASE_FILE} $(SOURCES)
 ifndef GITHUB_TOKEN
 	$(error GITHUB_TOKEN parameter must be set)
 endif
@@ -53,13 +55,22 @@ test:
 	go test -v
 
 .PHONY: ci
-ci: $(SOURCES)
+ci: ${BINDATA_RELEASE_FILE} $(SOURCES)
 	go get ./...
 	$(MAKE) metalinter
 	go build -ldflags '-X main.Version=${TAG}' -o ${APP_NAME}
 
+${BINDATA_DEBUG_FILE}: ${SOURCES_DATA}
+	rm -rf ${BINDATA_RELEASE_FILE}
+	go-bindata --debug -o=${BINDATA_DEBUG_FILE} ${DATA_DIR}/...
+
+${BINDATA_RELEASE_FILE}: ${SOURCES_DATA}
+	rm -rf ${BINDATA_DEBUG_FILE}
+	go-bindata -nocompress=true -nomemcopy=true -o=${BINDATA_RELEASE_FILE} ${DATA_DIR}/...
+
 .PHONY: prepare
 prepare: ${GOPATH}/bin/github-release \
+	${GOPATH}/bin/go-bindata \
 	${GOPATH}/bin/goupx \
 	${GOPATH}/bin/gometalinter \
 	upx
@@ -74,10 +85,15 @@ ${GOPATH}/bin/goupx:
 ${GOPATH}/bin/github-release:
 	go get github.com/aktau/github-release
 
+${GOPATH}/bin/go-bindata:
+	go get github.com/jteeuwen/go-bindata/go-bindata
+
 upx:
 	curl http://upx.sourceforge.net/download/upx-3.91-amd64_linux.tar.bz2 | tar xjvf - && mv upx-3.91-amd64_linux/upx upx && rm -rf upx-3.91-amd64_linux
 
 .PHONY: clean
 clean:
+	rm -rf ${BINDATA_DEBUG_FILE}
+	rm -rf ${BINDATA_RELEASE_FILE}
 	rm -rf ${APP_NAME}
 	rm -rf ${APP_NAME}.exe
