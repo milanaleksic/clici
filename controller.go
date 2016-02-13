@@ -81,9 +81,8 @@ func (controller *controller) explainTime(status jenkins.JobStatus) string {
 			return fmt.Sprintf("%v min more", secLeft/60)
 		}
 		return fmt.Sprintf("%v min longer than expected", -secLeft/60)
-	} else {
-		return humanize.Time(time.Now().Add(time.Duration(secLeft) * time.Second))
 	}
+	return humanize.Time(time.Now().Add(time.Duration(secLeft) * time.Second))
 }
 
 func (controller *controller) VisitCurrentJob(id int) {

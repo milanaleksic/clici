@@ -121,14 +121,6 @@ func (ui *CUIInterface) showJobDescriptionColumn(jobState *model.JobState, index
 		if jobState.Error != nil {
 			v.FgColor = gocui.ColorRed | gocui.AttrBold
 			fmt.Fprintf(v, "API processing had an error: %v", jobState.Error)
-		} else if jobState.Building {
-			if jobState.PreviousState == model.Success {
-				v.FgColor = gocui.ColorBlue
-				fmt.Fprintf(v, "by %v (%v)", jobState.CausesFriendly, jobState.Time)
-			} else {
-				v.FgColor = gocui.ColorRed | gocui.AttrBold
-				fmt.Fprintf(v, "by %v (%v); failed by %v", jobState.CausesFriendly, jobState.Time, jobState.CulpritsFriendly)
-			}
 		} else {
 			if jobState.PreviousState == model.Success {
 				v.FgColor = gocui.ColorGreen
