@@ -78,7 +78,7 @@ func (controller *controller) explainProperState(resultFromJenkins *jenkins.Stat
 }
 
 func (controller *controller) explainTime(status jenkins.JobStatus) string {
-	secLeft := status.EstimatedDuration/1000/60 - (time.Now().UnixNano()/1000/1000-status.Timestamp)/1000
+	secLeft := status.EstimatedDuration/1000 - (time.Now().UnixNano()/1000/1000-status.Timestamp)/1000
 	if status.Building {
 		if secLeft >= 0 {
 			return fmt.Sprintf("%v min more", secLeft/60)
