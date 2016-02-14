@@ -19,6 +19,7 @@ func getAPI() jenkins.API {
 }
 
 func getUI(feedbackChannel chan view.Command) (ui view.View, err error) {
+	view.AvoidUnicode = options.Interface.AvoidUnicode
 	switch options.Interface.Mode {
 	case interfaceSimple:
 		ui, err = view.NewConsoleInterface(feedbackChannel)
