@@ -138,6 +138,9 @@ func (api *ServerAPI) addActionIdsToSet(set map[string]bool, actions []action) {
 func (api *ServerAPI) addCauses(upstreamProject string, upstreamBuild int) (target []string, err error) {
 	status, err := api.getStatusForJob(upstreamProject, strconv.Itoa(upstreamBuild))
 	target = make([]string, 0)
+	if err != nil {
+		return
+	}
 	for _, action := range status.Actions {
 		for _, cause := range action.Causes {
 			if cause.UserID != "" {
