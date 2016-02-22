@@ -22,9 +22,8 @@ metalinter: ${APP_NAME}
 
 .PHONY: deploy-if-tagged
 deploy-if-tagged: ${BINDATA_RELEASE_FILE} $(SOURCES)
-	
 ifeq ($(IS_DEFINED_VERSION),true)
-	$(MAKE) deploy TAG=$(VERSION)
+	$(MAKE) _release_to_github TAG=$(VERSION)
 endif
 
 .PHONY: deploy
@@ -41,6 +40,16 @@ endif
 	echo Sleeping 5 seconds before trying to create release...
 	sleep 5
 	echo Creating release
+	$(MAKE) _release_to_github
+
+.PHONY: _release_to_github
+_release_to_github: ${BINDATA_RELEASE_FILE} $(SOURCES)
+ifndef GITHUB_TOKEN
+	$(error GITHUB_TOKEN parameter must be set)
+endif
+ifndef TAG
+	$(error TAG parameter must be set: make TAG=<TAG_VALUE>)
+endif
 	github-release release -u milanaleksic -r ${APP_NAME} --tag "${TAG}" --name "v${TAG}"
 
 	echo Building and shipping Windows
