@@ -59,7 +59,7 @@ endif
 
 	echo Building and shipping Linux
 	GOOS=linux go build -ldflags '-X main.Version=${TAG}'
-	goupx ${APP_NAME}
+	PATH=$PATH:. goupx ${APP_NAME}
 	github-release upload -u milanaleksic -r ${APP_NAME} --tag ${TAG} --name "${APP_NAME}-${TAG}-linux-amd64" -f ${APP_NAME}
 
 .PHONY: run
