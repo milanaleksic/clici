@@ -54,7 +54,7 @@ endif
 
 	echo Building and shipping Windows
 	GOOS=windows go build -ldflags '-X main.Version=${TAG}'
-	upx ${APP_NAME}.exe
+	./upx ${APP_NAME}.exe
 	github-release upload -u milanaleksic -r ${APP_NAME} --tag ${TAG} --name "${APP_NAME}-${TAG}-windows-amd64.exe" -f ${APP_NAME}.exe
 
 	echo Building and shipping Linux
