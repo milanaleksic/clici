@@ -1,10 +1,14 @@
 APP_NAME := jenkins_ping
+SHELL := /bin/bash
 GOPATH := ${GOPATH}
 SOURCEDIR = .
 DATA_DIR := ./data
 BINDATA_DEBUG_FILE := $(SOURCEDIR)/bindata_debug.go
 BINDATA_RELEASE_FILE := $(SOURCEDIR)/bindata_release.go
 SOURCES := $(shell find $(SOURCEDIR) -name '*.go' -not -path '${BINDATA_DEBUG_FILE}' -not -path '${BINDATA_RELEASE_FILE}')
+
+VERSION := $(shell git name-rev --tags --name-only `git rev-parse HEAD`)
+IS_DEFINED_VERSION := $(shell [ ! "${VERSION}" == "undefined" ] && echo true)
 
 .DEFAULT_GOAL: ${APP_NAME}
 
@@ -15,6 +19,13 @@ ${APP_NAME}: ${BINDATA_DEBUG_FILE} $(SOURCES)
 .PHONY: metalinter
 metalinter: ${APP_NAME}
 	gometalinter --exclude=bindata_* --deadline=2m ./...
+
+.PHONY: deploy-if-tagged
+deploy-if-tagged: ${BINDATA_RELEASE_FILE} $(SOURCES)
+	
+ifeq ($(IS_DEFINED_VERSION),true)
+	$(MAKE) deploy TAG=$(VERSION)
+endif
 
 .PHONY: deploy
 deploy: ${BINDATA_RELEASE_FILE} $(SOURCES)

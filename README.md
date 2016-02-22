@@ -1,6 +1,6 @@
 # Jenkins Ping
 
-[![Build Status](https://travis-ci.org/milanaleksic/jenkins_ping.svg?branch=master)](https://travis-ci.org/milanaleksic/jenkins_ping)
+[![Build Status](https://semaphoreci.com/api/v1/milanaleksic/jenkins_ping/branches/master/badge.svg)](https://semaphoreci.com/milanaleksic/jenkins_ping)
 
 Command line for Jenkins pipeline overview
 
