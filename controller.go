@@ -97,7 +97,7 @@ func (controller *controller) VisitPreviousJob(id int) {
 }
 
 func (controller *controller) visitURL(id int, urlFromJobName func(job string) string) {
-	if int(id) >= len(controller.state.JobStates) {
+	if id >= len(controller.state.JobStates) {
 		log.Printf("Unsupported index (out of bounds of known jobs): %v (max is %v)", id, len(controller.state.JobStates)-1)
 	} else {
 		url := urlFromJobName(controller.state.JobStates[id].JobName)
