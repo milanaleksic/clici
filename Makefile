@@ -86,11 +86,7 @@ ${BINDATA_RELEASE_FILE}: ${SOURCES_DATA} ## Create bindata production file with 
 	go-bindata -nocompress=true -nomemcopy=true -o=${BINDATA_RELEASE_FILE} ${DATA_DIR}/...
 
 .PHONY: prepare
-prepare: ${GOPATH}/bin/github-release ## First step that needs to be run on clean environments that will make sure all deps are available \
-	${GOPATH}/bin/go-bindata \
-	${GOPATH}/bin/goupx \
-	${GOPATH}/bin/gometalinter \
-	upx
+prepare: ${GOPATH}/bin/github-release ${GOPATH}/bin/go-bindata ${GOPATH}/bin/goupx ${GOPATH}/bin/gometalinter upx ## First step that needs to be run on clean environments that will make sure all deps are available
 
 ${GOPATH}/bin/gometalinter: ## Installs gometalinter tool
 	go get github.com/alecthomas/gometalinter
