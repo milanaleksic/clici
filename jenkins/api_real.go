@@ -8,6 +8,11 @@ import (
 	"strconv"
 )
 
+const (
+	lastCompletedBuild = "lastCompletedBuild"
+	lastBuild = "lastBuild"
+)
+
 // ServerAPI is a real-life implementation of the API which connects to a real Jenkins server.
 // Use the given "ServerLocation" field to set the location of the server.
 type ServerAPI struct {
@@ -17,22 +22,22 @@ type ServerAPI struct {
 
 // GetLastBuildURLForJob will create URL towards a page with LAST job execution result for a particular job
 func (api *ServerAPI) GetLastBuildURLForJob(job string) string {
-	return fmt.Sprintf("%v/job/%v/lastBuild/", api.ServerLocation, job)
+	return fmt.Sprintf("%v/job/%v/%v/", api.ServerLocation, job, lastBuild)
 }
 
 // GetLastCompletedBuildURLForJob will create URL towards a page with LAST COMPLETED job execution result for a particular job
 func (api *ServerAPI) GetLastCompletedBuildURLForJob(job string) string {
-	return fmt.Sprintf("%v/job/%v/lastCompletedBuild/", api.ServerLocation, job)
+	return fmt.Sprintf("%v/job/%v/%v/", api.ServerLocation, job, lastCompletedBuild)
 }
 
 // GetCurrentStatus returns current state for a particular job
 func (api *ServerAPI) GetCurrentStatus(job string) (status *JobStatus, err error) {
-	return api.getStatusForJob(job, "lastBuild")
+	return api.getStatusForJob(job, lastBuild)
 }
 
 func (api *ServerAPI) getStatusForJob(job string, id string) (status *JobStatus, err error) {
 	possibleCacheKey := fmt.Sprintf("%s-%s", job, id)
-	if id != "lastBuild" && id != "lastCompletedBuild" {
+	if id != lastBuild && id != lastCompletedBuild {
 		if api.cachedStatuses == nil {
 			api.cachedStatuses = make(map[string](*JobStatus), 0)
 		}
@@ -51,7 +56,7 @@ func (api *ServerAPI) getStatusForJob(job string, id string) (status *JobStatus,
 	defer func() { _ = resp.Body.Close() }()
 	result := &JobStatus{}
 	err = json.NewDecoder(resp.Body).Decode(&result)
-	if err == nil && id != "lastBuild" && id != "lastCompletedBuild" {
+	if err == nil && id != lastBuild && id != lastCompletedBuild {
 		api.cachedStatuses[possibleCacheKey] = result
 	}
 	return result, nil
@@ -86,7 +91,7 @@ func (api *ServerAPI) CausesFriendly(status *JobStatus) string {
 // returning a CSV list of people who caused it
 func (api *ServerAPI) CausesOfPreviousFailuresFriendly(name string) string {
 	set := make(map[string]bool, 0)
-	id := "lastCompletedBuild"
+	id := lastCompletedBuild
 	for {
 		statusIterator, err := api.getStatusForJob(name, id)
 		if err != nil {
