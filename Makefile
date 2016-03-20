@@ -72,7 +72,7 @@ test:
 .PHONY: ci
 ci: ${BINDATA_RELEASE_FILE} $(SOURCES)
 	$(MAKE) metalinter
-	go test ./...
+	$(MAKE) test
 	go build -ldflags '-X main.Version=${TAG}' -o ${APP_NAME}
 
 ${BINDATA_DEBUG_FILE}: ${SOURCES_DATA}
