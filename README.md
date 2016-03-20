@@ -8,22 +8,20 @@ Command line for Jenkins pipeline overview
 
 ## How to run
 
-Please run application with `--help` to see all options.
+I moved entire configuration from CLI switches into a `TOML` file.
 
-Application has 2 modes of running ncurses-like (*advanced*) and dump-to-console (the *simple* mode). Application will try to activate the advanced one and will fallback to simple one if it detects the advanced is not possible (for example out of an IDE). You can also force the simple mode of working via adequate command line switch.
+In case you are starting application for the first time, execute `jenkins_ping -make-default-config`
+which will generate a TOML file (it uses mock source instead of Jenkins server so you can experiment a bit).
 
-## Highly experimental
+## How to develop
 
-This app is in early stages of development. It *works for me* but it *might not work for you* (if not, I am sorry, but this is just yet another a hobby project of mine).
-
-## Building, tagging and artifact deployment
-
-This is `#golang` project. I used Go 1.5.
+This is a `golang` 1.6 project
 
 `go get github.com/milanaleksic/jenkins_ping` should be enough to get the code and build.
 
-To build project you can execute (this will get from internet all 3rd party utilites needed for deployment: upx, go-upx, github-release):
+In case you want to mimic my workflow you should use the `Makefile`:
 
+    # get all 3rd party tools
     make prepare
-
-You can start building project using `make`, even `deploy` to Github (if you have privileges to do that of course).
+    # build & test
+    make test

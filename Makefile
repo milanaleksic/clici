@@ -13,12 +13,11 @@ IS_DEFINED_VERSION := $(shell [ ! "${VERSION}" == "undefined" ] && echo true)
 .DEFAULT_GOAL: ${APP_NAME}
 
 ${APP_NAME}: ${BINDATA_DEBUG_FILE} $(SOURCES)
-	go get ./...
 	go build -ldflags '-X main.Version=${TAG}' -o ${APP_NAME}
 
 .PHONY: metalinter
 metalinter: ${APP_NAME}
-	gometalinter --exclude=bindata_* --deadline=2m ./...
+	gometalinter --exclude="bindata_*|vendor/*" --deadline=2m ./...
 
 .PHONY: deploy-if-tagged
 deploy-if-tagged: ${BINDATA_RELEASE_FILE} $(SOURCES)
@@ -64,19 +63,14 @@ endif
 
 .PHONY: run
 run: ${APP_NAME}
-	${APP_NAME} -refresh=2s \
-    -server "http://jenkins/" \
-    -interface=gui \
-    -mock=true \
-    -doLog=true
+	./${APP_NAME}
 
 .PHONY: test
 test:
-	go test -v
+	go test -v $$(go list ./... | grep -v /vendor/)
 
 .PHONY: ci
 ci: ${BINDATA_RELEASE_FILE} $(SOURCES)
-	go get ./...
 	$(MAKE) metalinter
 	go test ./...
 	go build -ldflags '-X main.Version=${TAG}' -o ${APP_NAME}
