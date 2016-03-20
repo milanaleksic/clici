@@ -5,7 +5,7 @@ SOURCEDIR = .
 DATA_DIR := ./data
 BINDATA_DEBUG_FILE := $(SOURCEDIR)/bindata_debug.go
 BINDATA_RELEASE_FILE := $(SOURCEDIR)/bindata_release.go
-SOURCES := $(shell find $(SOURCEDIR) -name '*.go' -not -path '${BINDATA_DEBUG_FILE}' -not -path '${BINDATA_RELEASE_FILE}')
+SOURCES := $(shell find $(SOURCEDIR) -name '*.go' -not -path '${BINDATA_DEBUG_FILE}' -not -path '${BINDATA_RELEASE_FILE}' -not -path './vendor/*')
 
 VERSION := $(shell git name-rev --tags --name-only `git rev-parse HEAD`)
 IS_DEFINED_VERSION := $(shell [ ! "${VERSION}" == "undefined" ] && echo true)
@@ -17,7 +17,7 @@ ${APP_NAME}: ${BINDATA_DEBUG_FILE} $(SOURCES)
 
 .PHONY: metalinter
 metalinter: ${APP_NAME}
-	gometalinter --exclude="bindata_*|vendor/*" --deadline=2m ./...
+	gometalinter --exclude="bindata_*" --vendor --deadline=2m ./...
 
 .PHONY: deploy-if-tagged
 deploy-if-tagged: ${BINDATA_RELEASE_FILE} $(SOURCES)
