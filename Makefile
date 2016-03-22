@@ -71,6 +71,7 @@ test:
 
 .PHONY: ci
 ci: ${BINDATA_RELEASE_FILE} $(SOURCES)
+	rm $$GOPATH/src/`cat .godir` || true
 	mkdir -p $$GOPATH/src/`cat .godir`
 	rsync -ar --delete . $$GOPATH/src/`cat .godir`
 	cd $$GOPATH/src/`cat .godir`
