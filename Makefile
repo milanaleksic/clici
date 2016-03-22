@@ -75,6 +75,8 @@ ci: ${BINDATA_RELEASE_FILE} $(SOURCES)
 	mkdir -p $$GOPATH/src/`cat .godir`
 	rsync -ar --delete . $$GOPATH/src/`cat .godir`
 	cd $$GOPATH/src/`cat .godir`
+	pwd
+	go version
 	gometalinter --disable=gotype --exclude="bindata_*" --vendor --deadline=2m ./...
 	$(MAKE) test
 	go build -ldflags '-X main.Version=${TAG}' -o ${APP_NAME}
