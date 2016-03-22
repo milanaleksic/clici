@@ -71,7 +71,10 @@ test:
 
 .PHONY: ci
 ci: ${BINDATA_RELEASE_FILE} $(SOURCES)
-	$(MAKE) metalinter
+	mkdir -p $$GOPATH/src/`cat .godir`
+	rsync -ar --delete . $$GOPATH/src/`cat .godir`
+	cd $$GOPATH/src/`cat .godir`
+	gometalinter --disable=gotype --exclude="bindata_*" --vendor --deadline=2m ./...
 	$(MAKE) test
 	go build -ldflags '-X main.Version=${TAG}' -o ${APP_NAME}
 
