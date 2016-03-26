@@ -1,0 +1,3 @@
+[submodule "gomakefiles"]
+	path = gomakefiles
+	url = https://github.com/milanaleksic/gomakefiles.git
