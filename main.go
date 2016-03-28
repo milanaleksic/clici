@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/milanaleksic/jenkins_ping/jenkins"
-	"github.com/milanaleksic/jenkins_ping/view"
+	"github.com/milanaleksic/clici/jenkins"
+	"github.com/milanaleksic/clici/view"
 )
 
 // Version holds the main version string which should be updated externally when building release
@@ -35,7 +35,7 @@ func getUI(feedbackChannel chan view.Command) (ui view.View, err error) {
 
 func main() {
 	if *options.CommandLine.showVersion {
-		fmt.Printf("jenkins_ping version: %v\n", Version)
+		fmt.Printf("clici version: %v\n", Version)
 		return
 	}
 	setupLog()

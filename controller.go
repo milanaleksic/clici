@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/dustin/go-humanize"
-	"github.com/milanaleksic/jenkins_ping/jenkins"
-	"github.com/milanaleksic/jenkins_ping/model"
-	"github.com/milanaleksic/jenkins_ping/view"
+	"github.com/milanaleksic/clici/jenkins"
+	"github.com/milanaleksic/clici/model"
+	"github.com/milanaleksic/clici/view"
 	"github.com/skratchdot/open-golang/open"
 )
 

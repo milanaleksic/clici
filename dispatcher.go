@@ -4,7 +4,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/milanaleksic/jenkins_ping/view"
+	"github.com/milanaleksic/clici/view"
 )
 
 type dispatcher struct {

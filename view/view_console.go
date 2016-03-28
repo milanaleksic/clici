@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/mgutz/ansi"
-	"github.com/milanaleksic/jenkins_ping/model"
+	"github.com/milanaleksic/clici/model"
 )
 
 var greenFormat = ansi.ColorFunc("green+b+h")

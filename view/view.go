@@ -1,6 +1,6 @@
 package view
 
-import "github.com/milanaleksic/jenkins_ping/model"
+import "github.com/milanaleksic/clici/model"
 
 // AvoidUnicode being set will ask UI NOT to use nice Unicode characters for Job statuses, like "✓"
 var AvoidUnicode bool

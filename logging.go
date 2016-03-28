@@ -20,9 +20,9 @@ var logFile *os.File
 
 func setupLog() {
 	if options.Application.DoLog {
-		fmt.Println("using " + filepath.Join(filepath.Dir(os.Args[0]), "jenkins_ping.log"))
+		fmt.Println("using " + filepath.Join(filepath.Dir(os.Args[0]), "clici.log"))
 		var err error
-		logFile, err = os.OpenFile(filepath.Join(filepath.Dir(os.Args[0]), "jenkins_ping.log"), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+		logFile, err = os.OpenFile(filepath.Join(filepath.Dir(os.Args[0]), "clici.log"), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 		if err != nil {
 			log.Fatalf("Error opening log file: %v", err)
 		}

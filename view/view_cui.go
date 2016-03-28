@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/jroimartin/gocui"
-	"github.com/milanaleksic/jenkins_ping/model"
+	"github.com/milanaleksic/clici/model"
 )
 
 // CUIInterface is a View that uses a ncurses-like advanced interface that
@@ -156,7 +156,7 @@ func NewCUIInterface(feedbackChannel chan Command) (view *CUIInterface, err erro
 		if v, err2 := g.SetView("center", maxX/2-24, maxY/2-2, maxX/2+23, maxY/2+1); err2 != nil {
 			checkCui(err2)
 			v.Frame = false
-			fmt.Fprintln(v, " Jenkins Ping\n https://github.com/milanaleksic/jenkins_ping")
+			fmt.Fprintln(v, " Jenkins Ping\n https://github.com/milanaleksic/clici")
 		}
 		return nil
 	})

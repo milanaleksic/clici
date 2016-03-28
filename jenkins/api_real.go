@@ -10,7 +10,7 @@ import (
 
 const (
 	lastCompletedBuild = "lastCompletedBuild"
-	lastBuild = "lastBuild"
+	lastBuild          = "lastBuild"
 )
 
 // ServerAPI is a real-life implementation of the API which connects to a real Jenkins server.
@@ -192,4 +192,3 @@ func (api *ServerAPI) GetFailedTestList(job string) (results []TestCase, err err
 	}
 	return
 }
-

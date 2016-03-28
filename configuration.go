@@ -17,7 +17,7 @@ const (
 )
 
 const (
-	configurationName         = "jenkins_ping.toml"
+	configurationName         = "clici.toml"
 	flagForBuildingConfigFile = "make-default-config"
 )
 

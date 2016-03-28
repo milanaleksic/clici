@@ -1,7 +1,7 @@
-jenkins_ping
-jenkins_ping.exe
-jenkins_ping.log
+clici
+clici.exe
+clici.log
 upx
 bindata_debug.go
 bindata_release.go
-/jenkins_ping.toml
+/clici.toml

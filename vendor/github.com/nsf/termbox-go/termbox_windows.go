@@ -1,9 +1,12 @@
 package termbox
 
-import "syscall"
+import (
+	"syscall"
+
+	"github.com/mattn/go-runewidth"
+)
 import "unsafe"
 import "unicode/utf16"
-import "github.com/mattn/go-runewidth"
 
 type (
 	wchar     uint16

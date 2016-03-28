@@ -38,7 +38,7 @@ const (
 	// Failure means that job had a fatal error
 	Failure
 	// Undefined means that job is either NotBuilt or Aborted
-    // Aborted means that job was aborted by someone (or something) before it finished running OR
+	// Aborted means that job was aborted by someone (or something) before it finished running OR
 	// it is Unstable means that the build had some errors but they were not fatal. For example, some tests faile
 	Undefined
 	// Unknown job state means that this application is not able to deduce job state
