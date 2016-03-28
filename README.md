@@ -1,4 +1,6 @@
-# clici (Command Line Interface for Continuous Integration)
+# clici
+
+> Command Line Interface for Continuous Integration
 
 [![Build Status](https://semaphoreci.com/api/v1/milanaleksic/clici/branches/master/badge.svg)](https://semaphoreci.com/milanaleksic/clici)
 
