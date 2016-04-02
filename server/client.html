@@ -1,0 +1,33 @@
+<!doctype html>
+<html>
+<head></head>
+<body>
+<div>
+    <input type="text" id="text" />
+    <input type="button" onclick="sendText(document.getElementById('text').value) " />
+</div>
+<div>
+    <span>Response from server: </span>
+    <span id="response"></span>
+</div>
+<script !src="">
+    var echoServer = new WebSocket("ws://localhost:12345/echo")
+    var target = document.getElementById("response")
+    echoServer.onmessage = function (event) {
+        target.innerText = event.data
+    }
+    function sendText(t) {
+        console.log("Sending: " + t)
+        // Construct a msg object containing the data the server needs to process the message from the chat client.
+        var msg = {
+            type: "message",
+            text: t,
+            date: Date.now()
+        };
+
+        // Send the msg object as a JSON-formatted string.
+        echoServer.send(JSON.stringify(msg));
+    }
+</script>
+</body>
+</html>
