@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"net/http"
+
 	"golang.org/x/net/websocket"
 )
 
@@ -12,7 +13,7 @@ func TestEchoServer(t *testing.T) {
 	handler := &handler{ServeMux: http.NewServeMux(), port: 12345}
 	started := make(chan struct{}, 0)
 	go handler.startAndWait(started)
-	defer func() { http.Get(fmt.Sprintf("localhost:12345/%s", handler.secret)) }()
+	defer func() { _, _ = http.Get(fmt.Sprintf("localhost:12345/%s", handler.secret)) }()
 
 	<-started
 
@@ -23,13 +24,13 @@ func TestEchoServer(t *testing.T) {
 		t.Fatal(err)
 	}
 	fmt.Println("Dialed")
-	if _, err := ws.Write([]byte("hello, world! 1")); err != nil {
+	if _, err = ws.Write([]byte("hello, world! 1")); err != nil {
 		t.Fatalf("??? %v", err)
 	}
-	if _, err := ws.Write([]byte("hello, world! 2")); err != nil {
+	if _, err = ws.Write([]byte("hello, world! 2")); err != nil {
 		t.Fatalf("??? %v", err)
 	}
-	if _, err := ws.Write([]byte("hello, world! 3")); err != nil {
+	if _, err = ws.Write([]byte("hello, world! 3")); err != nil {
 		t.Fatalf("??? %v", err)
 	}
 	fmt.Println("Written")
