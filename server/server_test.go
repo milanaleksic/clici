@@ -41,7 +41,7 @@ func withRunningServer(t *testing.T, callback func(port int)) {
 	}
 	handler := &Clici{ServeMux: http.NewServeMux(), Port: port}
 	started := make(chan struct{}, 0)
-	go handler.startAndWait(started)
+	go handler.StartAndWait(started)
 	defer func() {
 		resp, err := http.Get(fmt.Sprintf("http://localhost:%d/%s", port, handler.Secret))
 		if err != nil {
