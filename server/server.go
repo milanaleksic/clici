@@ -15,11 +15,16 @@ import (
 	"golang.org/x/net/websocket"
 )
 
+const (
+	ClosingSuccess = "Closing..."
+)
+
 type handler struct {
 	*http.ServeMux
-	lis    net.Listener
-	secret string
-	port   int
+	lis              net.Listener
+	secret           string
+	port             int
+	closedGracefully bool
 }
 
 func (h *handler) startAndWait(started chan<- struct{}) {
@@ -28,6 +33,7 @@ func (h *handler) startAndWait(started chan<- struct{}) {
 	if err != nil {
 		log.Fatalf("Could not listen: %v", err)
 	}
+	h.lis = lis
 
 	randData := make([]byte, 48)
 	_, err = rand.Read(randData)
@@ -40,22 +46,23 @@ func (h *handler) startAndWait(started chan<- struct{}) {
 	h.ServeMux.Handle("/echo", websocket.Handler(h.echoHandler))
 
 	started <- struct{}{}
-	err = http.Serve(lis, h)
-	if err != nil {
+	if err = http.Serve(lis, h); err != nil && !h.closedGracefully {
 		log.Fatalf("Could not start serving: %v", err)
 	}
 }
 
 func (h *handler) close(w http.ResponseWriter, r *http.Request) {
-	if err := h.lis.Close(); err != nil {
-		log.Fatalf("Not able to shutdown servergracefully, %v", err)
-	}
+	h.closedGracefully = true
 	log.Println("Closing the listener")
+	w.Write([]byte(ClosingSuccess))
+	if err := h.lis.Close(); err != nil {
+		log.Fatalf("Not able to shutdown server gracefully, %v", err)
+	}
 }
 
 func (h *handler) echoHandler(ws *websocket.Conn) {
+	var readBytes = make([]byte, 512)
 	for {
-		var readBytes = make([]byte, 512)
 		n, err := ws.Read(readBytes)
 		if err != nil {
 			if err == io.EOF {
