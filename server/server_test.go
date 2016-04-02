@@ -6,13 +6,16 @@ import (
 
 	"net/http"
 
-	"golang.org/x/net/websocket"
 	"io/ioutil"
+	"log"
+	"net"
+
+	"golang.org/x/net/websocket"
 )
 
 func TestEchoServer(t *testing.T) {
-	withRunningServer(t, func() {
-		ws := dial(t)
+	withRunningServer(t, func(port int) {
+		ws := dial(t, port)
 		writeBytes(t, ws, []byte("hello, world! 1"))
 		writeBytes(t, ws, []byte("hello, world! 2"))
 		writeBytes(t, ws, []byte("hello, world! 3"))
@@ -26,29 +29,40 @@ func TestEchoServer(t *testing.T) {
 	})
 }
 
-func withRunningServer(t *testing.T, callback func()) {
-	handler := &handler{ServeMux: http.NewServeMux(), port: 12345}
+func withRunningServer(t *testing.T, callback func(port int)) {
+	port := 8080
+	for ; port < 8100; port++ {
+		lis, err := net.ListenTCP(fmt.Sprintf("localhost:%d", port), nil)
+		if err != nil {
+			log.Printf("Skipping port %d since it can't be used", port)
+			_ = lis.Close()
+			break
+		}
+	}
+	handler := &handler{ServeMux: http.NewServeMux(), port: port}
 	started := make(chan struct{}, 0)
 	go handler.startAndWait(started)
 	defer func() {
-		resp, err := http.Get(fmt.Sprintf("http://localhost:12345/%s", handler.secret))
+		resp, err := http.Get(fmt.Sprintf("http://localhost:%d/%s", port, handler.secret))
 		if err != nil {
 			t.Fatalf("Err: %v", err)
 		}
 		b, err := ioutil.ReadAll(resp.Body)
-		if string(b) != ClosingSuccess {
+		if err != nil {
+			t.Errorf("Graceful server shutdown failed: %v", err)
+		} else if string(b) != ClosingSuccess {
 			t.Errorf("Graceful server shutdown failed: %v", string(b))
 		}
 	}()
 
 	<-started
 
-	callback()
+	callback(port)
 }
 
-func dial(t *testing.T) (ws *websocket.Conn) {
+func dial(t *testing.T, port int) (ws *websocket.Conn) {
 	origin := "http://ignored/"
-	url := "ws://localhost:12345/echo"
+	url := fmt.Sprintf("ws://localhost:%d/echo", port)
 	ws, err := websocket.Dial(url, "ws", origin)
 	if err != nil {
 		t.Fatal(err)

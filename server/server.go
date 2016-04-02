@@ -16,6 +16,7 @@ import (
 )
 
 const (
+	// ClosingSuccess is a response message received when close endpoint is called
 	ClosingSuccess = "Closing..."
 )
 
@@ -54,7 +55,9 @@ func (h *handler) startAndWait(started chan<- struct{}) {
 func (h *handler) close(w http.ResponseWriter, r *http.Request) {
 	h.closedGracefully = true
 	log.Println("Closing the listener")
-	w.Write([]byte(ClosingSuccess))
+	if _, err := w.Write([]byte(ClosingSuccess)); err != nil {
+		log.Printf("Not able to send ClosingSuccess message to the client, %v", err)
+	}
 	if err := h.lis.Close(); err != nil {
 		log.Fatalf("Not able to shutdown server gracefully, %v", err)
 	}
