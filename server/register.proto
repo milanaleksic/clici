@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package server;
+
+message Register {
+
+    message Job {
+        string serverLocation = 1;
+        string jobName = 2;
+    }
+
+    repeated Job jobs = 1;
+}

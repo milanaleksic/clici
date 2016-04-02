@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"fmt"
@@ -20,31 +20,37 @@ const (
 	ClosingSuccess = "Closing..."
 )
 
-type handler struct {
+/*
+Clici is the main server class of Clici. It is the mediator between Jenkins server(s)
+and the Clici clients, lowering the impact on the Jenkins server and giving
+more real-time push style of notifications to the clients.
+ */
+type Clici struct {
 	*http.ServeMux
 	lis              net.Listener
-	secret           string
-	port             int
 	closedGracefully bool
+	// Secret is the URL on this server that can be called to
+	// gracefully shutdown the server
+	Secret           string
+	// Port is the port which will be occupied by the server
+	Port             int
 }
 
-func (h *handler) startAndWait(started chan<- struct{}) {
+/*
+StartAndWait is the entry point after the server object has been initiated.
+It will block until shutdown call is executed or until program is interrupted
+ */
+func (h *Clici) StartAndWait(started chan<- struct{}) {
 	var err error
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", h.port))
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", h.Port))
 	if err != nil {
 		log.Fatalf("Could not listen: %v", err)
 	}
 	h.lis = lis
 
-	randData := make([]byte, 48)
-	_, err = rand.Read(randData)
-	if err != nil {
-		log.Fatalf("Could not generate random secret: %v", err)
-	}
-	h.secret = base64.StdEncoding.EncodeToString(randData)
-	h.ServeMux.HandleFunc(fmt.Sprintf("/%v", h.secret), h.close)
+	h.registerRandomizedShutdownHook()
 
-	h.ServeMux.Handle("/echo", websocket.Handler(h.echoHandler))
+	h.ServeMux.Handle("/register", websocket.Handler(h.registerHandler))
 
 	started <- struct{}{}
 	if err = http.Serve(lis, h); err != nil && !h.closedGracefully {
@@ -52,18 +58,26 @@ func (h *handler) startAndWait(started chan<- struct{}) {
 	}
 }
 
-func (h *handler) close(w http.ResponseWriter, r *http.Request) {
-	h.closedGracefully = true
-	log.Println("Closing the listener")
-	if _, err := w.Write([]byte(ClosingSuccess)); err != nil {
-		log.Printf("Not able to send ClosingSuccess message to the client, %v", err)
+func (h *Clici) registerRandomizedShutdownHook() {
+	randData := make([]byte, 48)
+	_, err := rand.Read(randData)
+	if err != nil {
+		log.Fatalf("Could not generate random secret: %v", err)
 	}
-	if err := h.lis.Close(); err != nil {
-		log.Fatalf("Not able to shutdown server gracefully, %v", err)
-	}
+	h.Secret = base64.StdEncoding.EncodeToString(randData)
+	h.ServeMux.HandleFunc(fmt.Sprintf("/%v", h.Secret), func(w http.ResponseWriter, r *http.Request) {
+		h.closedGracefully = true
+		log.Println("Closing the listener")
+		if _, err := w.Write([]byte(ClosingSuccess)); err != nil {
+			log.Printf("Not able to send ClosingSuccess message to the client, %v", err)
+		}
+		if err := h.lis.Close(); err != nil {
+			log.Fatalf("Not able to shutdown server gracefully, %v", err)
+		}
+	})
 }
 
-func (h *handler) echoHandler(ws *websocket.Conn) {
+func (h *Clici) registerHandler(ws *websocket.Conn) {
 	var readBytes = make([]byte, 512)
 	for {
 		n, err := ws.Read(readBytes)
@@ -87,9 +101,4 @@ func (h *handler) echoHandler(ws *websocket.Conn) {
 			return
 		}
 	}
-}
-
-func main() {
-	handler := &handler{ServeMux: http.NewServeMux()}
-	handler.startAndWait(make(chan<- struct{}))
 }

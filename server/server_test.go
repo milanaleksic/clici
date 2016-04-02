@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"fmt"
@@ -39,11 +39,11 @@ func withRunningServer(t *testing.T, callback func(port int)) {
 			break
 		}
 	}
-	handler := &handler{ServeMux: http.NewServeMux(), port: port}
+	handler := &Clici{ServeMux: http.NewServeMux(), Port: port}
 	started := make(chan struct{}, 0)
 	go handler.startAndWait(started)
 	defer func() {
-		resp, err := http.Get(fmt.Sprintf("http://localhost:%d/%s", port, handler.secret))
+		resp, err := http.Get(fmt.Sprintf("http://localhost:%d/%s", port, handler.Secret))
 		if err != nil {
 			t.Fatalf("Err: %v", err)
 		}
@@ -62,7 +62,7 @@ func withRunningServer(t *testing.T, callback func(port int)) {
 
 func dial(t *testing.T, port int) (ws *websocket.Conn) {
 	origin := "http://ignored/"
-	url := fmt.Sprintf("ws://localhost:%d/echo", port)
+	url := fmt.Sprintf("ws://localhost:%d/register", port)
 	ws, err := websocket.Dial(url, "ws", origin)
 	if err != nil {
 		t.Fatal(err)

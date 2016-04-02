@@ -15,10 +15,7 @@ package server
 
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
-import (
-	math "math"
-	"net"
-)
+import math "math"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -34,7 +31,9 @@ func (m *Register) String() string { return proto.CompactTextString(m) }
 func (*Register) ProtoMessage()    {}
 
 func (m *Register) GetJobs() []*Register_Job {
-	if m
+	if m != nil {
+		return m.Jobs
+	}
 	return nil
 }
 

@@ -5,11 +5,14 @@ include gomakefiles/common.mk
 include gomakefiles/metalinter.mk
 include gomakefiles/upx.mk
 include gomakefiles/bindata.mk
+include gomakefiles/proto.mk
 
 SOURCES := $(shell find $(SOURCEDIR) -name '*.go' \
 	-not -path '${BINDATA_DEBUG_FILE}' \
 	-not -path '${BINDATA_RELEASE_FILE}' \
 	-not -path './vendor/*')
+
+EXCLUDES_METALINTER := .*.pb.go|bindata_.*.go
 
 ${APP_NAME}: ${BINDATA_DEBUG_FILE} $(SOURCES)
 	go build -ldflags '-X main.Version=${TAG}' -o ${APP_NAME}
