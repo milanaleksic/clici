@@ -6,10 +6,15 @@ import (
 
 	"github.com/milanaleksic/clici/jenkins"
 	"github.com/milanaleksic/clici/view"
+	"github.com/milanaleksic/clici/server"
 )
 
 // Version holds the main version string which should be updated externally when building release
 var Version = "undefined"
+
+func init() {
+	server.Version = Version
+}
 
 func getAPI() jenkins.API {
 	if options.Application.Mock {

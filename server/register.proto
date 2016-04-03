@@ -11,3 +11,8 @@ message Register {
 
     repeated Job jobs = 1;
 }
+
+message RegisterResponse {
+    string version = 1;
+    bool success = 2;
+}

@@ -10,6 +10,7 @@ It is generated from these files:
 
 It has these top-level messages:
 	Register
+	RegisterResponse
 */
 package server
 
@@ -46,7 +47,17 @@ func (m *Register_Job) Reset()         { *m = Register_Job{} }
 func (m *Register_Job) String() string { return proto.CompactTextString(m) }
 func (*Register_Job) ProtoMessage()    {}
 
+type RegisterResponse struct {
+	Version string `protobuf:"bytes,1,opt,name=version" json:"version,omitempty"`
+	Success bool   `protobuf:"varint,2,opt,name=success" json:"success,omitempty"`
+}
+
+func (m *RegisterResponse) Reset()         { *m = RegisterResponse{} }
+func (m *RegisterResponse) String() string { return proto.CompactTextString(m) }
+func (*RegisterResponse) ProtoMessage()    {}
+
 func init() {
 	proto.RegisterType((*Register)(nil), "server.Register")
 	proto.RegisterType((*Register_Job)(nil), "server.Register.Job")
+	proto.RegisterType((*RegisterResponse)(nil), "server.RegisterResponse")
 }

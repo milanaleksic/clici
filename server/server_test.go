@@ -11,31 +11,27 @@ import (
 	"net"
 
 	"golang.org/x/net/websocket"
-	"github.com/golang/protobuf/proto"
-	"encoding/binary"
-	"bytes"
 )
 
 func TestEchoServer(t *testing.T) {
 	withRunningServer(t, func(ws *websocket.Conn) {
-
 		request := &Register{
 			Jobs: []*Register_Job{
 				&Register_Job{
 					ServerLocation: "localhost:8101/jenkins/",
-					JobName: "test_job_1",
+					JobName:        "test_job_1",
 				},
 			},
 		}
-		marshalled, err := proto.Marshal(request)
-		if err != nil {
-			t.Fatalf("Could not marshal message: %v", err)
+		wire := &LengthEncodedProtoReaderWriter{UnderlyingReadWriter: ws}
+		if err := wire.WriteProto(request); err != nil {
+			t.Fatalf("registration failed while writing request: %v", err)
 		}
-		writeMessage(t, ws, marshalled)
-		read := readBytes(t, ws)
-		expected := "Received!"
-		if string(read) != expected {
-			t.Fatalf("[%v] != [%v]", string(read), expected)
+		response := RegisterResponse{}
+		if err := wire.ReadProto(&response); err != nil {
+			t.Fatalf("registration failed with error: %v", err)
+		} else if !response.Success {
+			t.Fatalf("registration failed")
 		}
 	})
 }
@@ -84,30 +80,4 @@ func dial(t *testing.T, port int) (ws *websocket.Conn) {
 		t.Fatal(err)
 	}
 	return
-}
-
-func writeMessage(t *testing.T, ws *websocket.Conn, data []byte) {
-	buf := new(bytes.Buffer)
-	err := binary.Write(buf, binary.LittleEndian, int32(len(data)))
-	if err != nil {
-		fmt.Println("binary.Write failed:", err)
-	}
-
-	if _, err := ws.Write(buf.Bytes()); err != nil {
-		t.Fatalf("write bytes for length encoding failed: %v", err)
-	}
-
-	if _, err := ws.Write(data); err != nil {
-		t.Fatalf("write bytes for data failed: %v", err)
-	}
-}
-
-func readBytes(t *testing.T, ws *websocket.Conn) (read []byte) {
-	var n int
-	var msg = make([]byte, 512)
-	n, err := ws.Read(msg)
-	if err != nil {
-		t.Fatalf("read bytes failed: %v", err)
-	}
-	return msg[:n]
 }
