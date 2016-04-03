@@ -5,8 +5,8 @@ import (
 	"log"
 
 	"github.com/milanaleksic/clici/jenkins"
-	"github.com/milanaleksic/clici/view"
 	"github.com/milanaleksic/clici/server"
+	"github.com/milanaleksic/clici/view"
 )
 
 // Version holds the main version string which should be updated externally when building release

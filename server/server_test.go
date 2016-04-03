@@ -13,7 +13,7 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-func TestEchoServer(t *testing.T) {
+func TestRegistration(t *testing.T) {
 	withRunningServer(t, func(ws *websocket.Conn) {
 		request := &Register{
 			Jobs: []*Register_Job{
@@ -51,7 +51,7 @@ func withRunningServer(t *testing.T, callback func(ws *websocket.Conn)) {
 		t.Fatalf("Could not execute test since all testing ports are occupied or forbidden (8080...8100)")
 	}
 	log.Printf("Using port %d", port)
-	handler := &Clici{ServeMux: http.NewServeMux(), Port: port}
+	handler := NewClici(port)
 	started := make(chan struct{}, 0)
 	go handler.StartAndWait(started)
 	defer func() {

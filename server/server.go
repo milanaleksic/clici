@@ -7,8 +7,6 @@ import (
 	"net/http"
 	"strings"
 
-	"crypto/rand"
-	"encoding/base64"
 	"net"
 	"syscall"
 
@@ -36,7 +34,18 @@ type Clici struct {
 	// gracefully shutdown the server
 	Secret string
 	// Port is the port which will be occupied by the server
-	Port int
+	Port    int
+	mapping *Mapping
+}
+
+// NewClici creates a new Clici server behind a certain port.
+// Nothing will be started until StartAndWait is called though.
+func NewClici(port int) Clici {
+	clici := Clici{
+		ServeMux: http.NewServeMux(), Port: port,
+	}
+	clici.mapping = NewMapping()
+	return clici
 }
 
 /*
@@ -62,12 +71,7 @@ func (h *Clici) StartAndWait(started chan<- struct{}) {
 }
 
 func (h *Clici) registerRandomizedShutdownHook() {
-	randData := make([]byte, 48)
-	_, err := rand.Read(randData)
-	if err != nil {
-		log.Fatalf("Could not generate random secret: %v", err)
-	}
-	h.Secret = base64.StdEncoding.EncodeToString(randData)
+	h.Secret = randomStringFromBytes(48)
 	h.ServeMux.HandleFunc(fmt.Sprintf("/%v", h.Secret), func(w http.ResponseWriter, r *http.Request) {
 		h.closedGracefully = true
 		log.Println("Closing the listener")
@@ -81,25 +85,37 @@ func (h *Clici) registerRandomizedShutdownHook() {
 }
 
 func (h *Clici) registerHandler(ws *websocket.Conn) {
-	lepr := &LengthEncodedProtoReaderWriter{UnderlyingReadWriter:ws}
-	for {
-		register := Register{}
-		err := lepr.ReadProto(&register)
-		if err != nil {
-			if err == io.EOF {
-				// ignore
-			} else if strings.Contains(err.Error(), syscall.ECONNRESET.Error()) {
-				return
-			} else {
-				log.Printf("Failure receiving: %v, terminating connection", err)
+	id := randomStringFromBytes(8)
+	lepr := &LengthEncodedProtoReaderWriter{UnderlyingReadWriter: ws}
+	newRegistrations := make(chan Register)
+	clientLeft := make(chan struct{})
+	go func() {
+		for {
+			register := Register{}
+			err := lepr.ReadProto(&register)
+			if err != nil {
+				if err == io.EOF {
+					// ignore
+				} else if strings.Contains(err.Error(), syscall.ECONNRESET.Error()) {
+					return
+				} else {
+					log.Printf("Failure receiving: %v, terminating connection", err)
+				}
+				_ = lepr.UnderlyingReadWriter.Close()
+				break
 			}
-			_ = lepr.UnderlyingReadWriter.Close()
-			return
-		}
 
-		if !h.respondAllOk(lepr) {
-			return
+			if !h.respondAllOk(lepr) {
+				break
+			}
 		}
+		clientLeft <- struct{}{}
+	}()
+	select {
+	case requestedMappings := <-newRegistrations:
+		h.mapping.RegisterClient(id, requestedMappings)
+	case <-clientLeft:
+		h.mapping.UnRegisterClient(id)
 	}
 }
 
@@ -115,4 +131,3 @@ func (h *Clici) respondAllOk(lepr *LengthEncodedProtoReaderWriter) bool {
 	}
 	return true
 }
-

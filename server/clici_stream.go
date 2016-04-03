@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/golang/protobuf/proto"
 	"log"
+
+	"github.com/golang/protobuf/proto"
 )
 
 const (
