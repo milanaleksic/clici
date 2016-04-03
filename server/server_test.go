@@ -14,8 +14,7 @@ import (
 )
 
 func TestEchoServer(t *testing.T) {
-	withRunningServer(t, func(port int) {
-		ws := dial(t, port)
+	withRunningServer(t, func(ws *websocket.Conn) {
 		writeBytes(t, ws, []byte("hello, world! 1"))
 		writeBytes(t, ws, []byte("hello, world! 2"))
 		writeBytes(t, ws, []byte("hello, world! 3"))
@@ -29,16 +28,21 @@ func TestEchoServer(t *testing.T) {
 	})
 }
 
-func withRunningServer(t *testing.T, callback func(port int)) {
+func withRunningServer(t *testing.T, callback func(ws *websocket.Conn)) {
 	port := 8080
-	for ; port < 8100; port++ {
-		lis, err := net.ListenTCP(fmt.Sprintf("localhost:%d", port), nil)
+	for ; port <= 8100; port++ {
+		lis, err := net.ListenTCP("tcp", &net.TCPAddr{Port:port})
 		if err != nil {
-			log.Printf("Skipping port %d since it can't be used", port)
+			log.Printf("Skipping port %d since it can't be used: %v", port, err)
+		} else {
 			_ = lis.Close()
 			break
 		}
 	}
+	if port == 8101 {
+		t.Fatalf("Could not execute test since all testing ports are occupied or forbidden (8080...8100)")
+	}
+	log.Printf("Using port %d", port)
 	handler := &Clici{ServeMux: http.NewServeMux(), Port: port}
 	started := make(chan struct{}, 0)
 	go handler.StartAndWait(started)
@@ -57,7 +61,7 @@ func withRunningServer(t *testing.T, callback func(port int)) {
 
 	<-started
 
-	callback(port)
+	callback(dial(t, port))
 }
 
 func dial(t *testing.T, port int) (ws *websocket.Conn) {
