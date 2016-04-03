@@ -74,7 +74,7 @@ func withRunningServer(t *testing.T, callback func(ws *websocket.Conn)) {
 
 func dial(t *testing.T, port int) (ws *websocket.Conn) {
 	origin := "http://ignored/"
-	url := fmt.Sprintf("ws://localhost:%d/register", port)
+	url := fmt.Sprintf("ws://localhost:%d/ws", port)
 	ws, err := websocket.Dial(url, "ws", origin)
 	if err != nil {
 		t.Fatal(err)

@@ -53,7 +53,7 @@ func (h *Clici) StartAndWait(started chan<- struct{}) {
 
 	h.registerRandomizedShutdownHook()
 
-	h.ServeMux.Handle("/register", websocket.Handler(h.registerHandler))
+	h.ServeMux.Handle("/ws", websocket.Handler(h.registerHandler))
 
 	started <- struct{}{}
 	if err = http.Serve(lis, h); err != nil && !h.closedGracefully {
@@ -93,19 +93,26 @@ func (h *Clici) registerHandler(ws *websocket.Conn) {
 			} else {
 				log.Printf("Failure receiving: %v, terminating connection", err)
 			}
-			_ = ws.Close()
+			_ = lepr.UnderlyingReadWriter.Close()
 			return
 		}
-		//fmt.Printf("Received %d bytes: %v\n", n, readBytes[:n])
 
-		response := RegisterResponse{
-			Version: Version,
-			Success: true,
-		}
-		if err = lepr.WriteProto(&response); err != nil {
-			log.Printf("Failure echoing back: %v, terminating connection", err)
-			_ = ws.Close()
+		if !h.respondAllOk(lepr) {
 			return
 		}
 	}
 }
+
+func (h *Clici) respondAllOk(lepr *LengthEncodedProtoReaderWriter) bool {
+	response := RegisterResponse{
+		Version: Version,
+		Success: true,
+	}
+	if err := lepr.WriteProto(&response); err != nil {
+		log.Printf("Failure responding to request: %v, terminating connection", err)
+		_ = lepr.UnderlyingReadWriter.Close()
+		return false
+	}
+	return true
+}
+
