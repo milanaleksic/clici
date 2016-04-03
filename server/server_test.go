@@ -11,19 +11,31 @@ import (
 	"net"
 
 	"golang.org/x/net/websocket"
+	"github.com/golang/protobuf/proto"
+	"encoding/binary"
+	"bytes"
 )
 
 func TestEchoServer(t *testing.T) {
 	withRunningServer(t, func(ws *websocket.Conn) {
-		writeBytes(t, ws, []byte("hello, world! 1"))
-		writeBytes(t, ws, []byte("hello, world! 2"))
-		writeBytes(t, ws, []byte("hello, world! 3"))
-		for i := 0; i < 3; i++ {
-			read := readBytes(t, ws)
-			expected := "Received!"
-			if string(read) != expected {
-				t.Fatalf("[%v] != [%v]", string(read), expected)
-			}
+
+		request := &Register{
+			Jobs: []*Register_Job{
+				&Register_Job{
+					ServerLocation: "localhost:8101/jenkins/",
+					JobName: "test_job_1",
+				},
+			},
+		}
+		marshalled, err := proto.Marshal(request)
+		if err != nil {
+			t.Fatalf("Could not marshal message: %v", err)
+		}
+		writeMessage(t, ws, marshalled)
+		read := readBytes(t, ws)
+		expected := "Received!"
+		if string(read) != expected {
+			t.Fatalf("[%v] != [%v]", string(read), expected)
 		}
 	})
 }
@@ -31,7 +43,7 @@ func TestEchoServer(t *testing.T) {
 func withRunningServer(t *testing.T, callback func(ws *websocket.Conn)) {
 	port := 8080
 	for ; port <= 8100; port++ {
-		lis, err := net.ListenTCP("tcp", &net.TCPAddr{Port:port})
+		lis, err := net.ListenTCP("tcp", &net.TCPAddr{Port: port})
 		if err != nil {
 			log.Printf("Skipping port %d since it can't be used: %v", port, err)
 		} else {
@@ -74,9 +86,19 @@ func dial(t *testing.T, port int) (ws *websocket.Conn) {
 	return
 }
 
-func writeBytes(t *testing.T, ws *websocket.Conn, bytes []byte) {
-	if _, err := ws.Write(bytes); err != nil {
-		t.Fatalf("??? %v", err)
+func writeMessage(t *testing.T, ws *websocket.Conn, data []byte) {
+	buf := new(bytes.Buffer)
+	err := binary.Write(buf, binary.LittleEndian, int32(len(data)))
+	if err != nil {
+		fmt.Println("binary.Write failed:", err)
+	}
+
+	if _, err := ws.Write(buf.Bytes()); err != nil {
+		t.Fatalf("write bytes for length encoding failed: %v", err)
+	}
+
+	if _, err := ws.Write(data); err != nil {
+		t.Fatalf("write bytes for data failed: %v", err)
 	}
 }
 
@@ -85,7 +107,7 @@ func readBytes(t *testing.T, ws *websocket.Conn) (read []byte) {
 	var msg = make([]byte, 512)
 	n, err := ws.Read(msg)
 	if err != nil {
-		t.Fatalf("??? %v", err)
+		t.Fatalf("read bytes failed: %v", err)
 	}
 	return msg[:n]
 }
