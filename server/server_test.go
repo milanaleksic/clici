@@ -55,6 +55,7 @@ func withRunningServer(t *testing.T, callback func(ws *websocket.Conn)) {
 	started := make(chan struct{}, 0)
 	go handler.StartAndWait(started)
 	defer func() {
+		// FIXME: why is this sometimes returning 404?
 		resp, err := http.Get(fmt.Sprintf("http://localhost:%d/%s", port, handler.Secret))
 		if err != nil {
 			t.Fatalf("Err: %v", err)
