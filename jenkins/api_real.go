@@ -113,14 +113,14 @@ func (api *ServerAPI) CausesOfPreviousFailuresFriendly(name string) string {
 	return joinKeysInCsv(set)
 }
 
-func (api *ServerAPI) addCulpritIdsToSet(set map[string]bool, culprits []culprit) {
+func (api *ServerAPI) addCulpritIdsToSet(set map[string]bool, culprits []Culprit) {
 	for _, culprit := range culprits {
 		set[culprit.FullName] = true
 	}
 	return
 }
 
-func (api *ServerAPI) addActionIdsToSet(set map[string]bool, actions []action) {
+func (api *ServerAPI) addActionIdsToSet(set map[string]bool, actions []Action) {
 	for _, action := range actions {
 		for _, cause := range action.Causes {
 			if cause.UserID != "" {
@@ -176,7 +176,7 @@ func (api *ServerAPI) GetFailedTestList(job string) (results []TestCase, err err
 		return
 	}
 	defer func() { _ = resp.Body.Close() }()
-	var received testCaseResult
+	var received TestCaseResult
 	err = json.NewDecoder(resp.Body).Decode(&received)
 	if err != nil {
 		return

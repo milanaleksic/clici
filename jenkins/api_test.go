@@ -112,7 +112,7 @@ func TestParsingTestingReport(t *testing.T) {
   ]
 }
 `
-	status := testCaseResult{}
+	status := TestCaseResult{}
 	err := json.Unmarshal([]byte(statusWire), &status)
 	if err != nil {
 		t.Fatal(err)

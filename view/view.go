@@ -11,3 +11,12 @@ type View interface {
 	PresentState(state *model.State)
 	Close()
 }
+
+type CallbackAsView func(state *model.State)
+
+func (callback CallbackAsView) PresentState(state *model.State) {
+	callback(state)
+}
+
+func (callback CallbackAsView) Close() {
+}

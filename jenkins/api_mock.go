@@ -21,7 +21,7 @@ var randomCauses = []string{
 // GetKnownJobs is a MOCK for call that represents API which gives back list of all known jobs
 func (api *MockAPI) GetKnownJobs() (resultFromJenkins *Status, err error) {
 	resultFromJenkins = &Status{}
-	resultFromJenkins.JobBuildStatus = make([]jobBuildStatus, 0)
+	resultFromJenkins.JobBuildStatus = make([]JobBuildStatus, 0)
 	for i := 0; i < 12; i++ {
 		var color string
 		switch rand.Intn(3) {
@@ -32,7 +32,7 @@ func (api *MockAPI) GetKnownJobs() (resultFromJenkins *Status, err error) {
 		case 2:
 			color = "aborted"
 		}
-		resultFromJenkins.JobBuildStatus = append(resultFromJenkins.JobBuildStatus, jobBuildStatus{
+		resultFromJenkins.JobBuildStatus = append(resultFromJenkins.JobBuildStatus, JobBuildStatus{
 			Name:  fmt.Sprintf("a_test_job_long_name%v", i),
 			Color: color,
 		})
@@ -42,15 +42,15 @@ func (api *MockAPI) GetKnownJobs() (resultFromJenkins *Status, err error) {
 
 // GetCurrentStatus is a MOCK for call that returns current state for a particular job
 func (api *MockAPI) GetCurrentStatus(job string) (status *JobStatus, err error) {
-	var culprits = make([]culprit, 0)
+	var culprits = make([]Culprit, 0)
 	for i := 0; i < rand.Intn(5); i++ {
-		culprits = append(culprits, culprit{
+		culprits = append(culprits, Culprit{
 			FullName: randomCauses[rand.Intn(len(randomCauses))],
 		})
 	}
-	var causes = make([]cause, 0)
+	var causes = make([]Cause, 0)
 	for i := 0; i < rand.Intn(5); i++ {
-		causes = append(causes, cause{
+		causes = append(causes, Cause{
 			//TODO: mock also causes chain here
 			UserID: randomCauses[rand.Intn(len(randomCauses))],
 		})
@@ -60,8 +60,8 @@ func (api *MockAPI) GetCurrentStatus(job string) (status *JobStatus, err error) 
 		EstimatedDuration: int64(rand.Intn(300000)),
 		Timestamp:         time.Now().UnixNano()/1000/1000 - int64(rand.Intn(300000)),
 		Culprits:          culprits,
-		Actions: []action{
-			action{
+		Actions: []Action{
+			Action{
 				Causes: causes,
 			},
 		},

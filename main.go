@@ -7,6 +7,7 @@ import (
 	"github.com/milanaleksic/clici/jenkins"
 	"github.com/milanaleksic/clici/server"
 	"github.com/milanaleksic/clici/view"
+	"github.com/milanaleksic/clici/controller"
 )
 
 // Version holds the main version string which should be updated externally when building release
@@ -56,10 +57,9 @@ func main() {
 	}
 	dispatcher := &dispatcher{
 		feedbackChannel: feedbackChannel,
-		controller: &controller{
+		controller: &controller.Controller{
 			View:      ui,
 			API:       getAPI(),
-			KnownJobs: options.Jenkins.Jobs,
 		},
 	}
 	dispatcher.mainLoop()

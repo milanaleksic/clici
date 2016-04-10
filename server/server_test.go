@@ -16,9 +16,8 @@ import (
 
 func TestRegistration(t *testing.T) {
 	var mapping *Mapping
-	var registration interface{}
 	var connid string
-	withRunningServer(t, func(clici *Clici, ws *websocket.Conn) {
+	withRunningServer(t, func(clici *CliciServer, ws *websocket.Conn) {
 		mapping = clici.mapping
 		request := &Register{
 			Jobs: []*Register_Job{
@@ -38,34 +37,33 @@ func TestRegistration(t *testing.T) {
 		} else if !response.Success {
 			t.Fatalf("registration failed")
 		}
-		err := retry(func() (err error) {
-			tx := clici.mapping.db.Txn(false)
-			registration, err = tx.First(registrationTable, "connid", response.Connid)
-			if registration != nil && err == nil {
-				return
-			}
-			return fmt.Errorf("Registration is not set")
-		})
-		if err != nil {
-			t.Fatalf("registration did not create new record in memdb on server side: err=%v, registration=%v", err, registration)
+		if err := assertConnectionRegisteredInMapping(clici.mapping, response.Connid, true); err != nil {
+			t.Fatalf("registration did not create new record in memdb on server side: err=%v", err)
 		}
 		connid = response.Connid
 	})
 
-	err := retry(func() (err error) {
-		tx := mapping.db.Txn(false)
-		registration, err = tx.First(registrationTable, "connid", connid)
-		if registration == nil && err == nil {
-			return
-		}
-		return fmt.Errorf("Registration is still not removed")
-	})
-	if err != nil {
-		t.Fatalf("closing did not remove connection from memdb: err=%v, registration=%v", err, registration)
+	if err := assertConnectionRegisteredInMapping(mapping, connid, false); err != nil {
+		t.Fatalf("closing did not remove connection from memdb: err=%v", err)
 	}
 }
 
-func withRunningServer(t *testing.T, callback func(clici *Clici, ws *websocket.Conn)) {
+func assertConnectionRegisteredInMapping(mapping *Mapping, connid string, shouldExist bool) (err error) {
+	return retry(func() (err error) {
+		tx := mapping.db.Txn(false)
+		registration, err := tx.First(registrationTable, "connid", connid)
+		if shouldExist && registration == nil {
+			return fmt.Errorf("Registration is not set: %v", registration)
+		} else if (!shouldExist) && registration != nil {
+			return fmt.Errorf("Registration is set: %v", registration)
+		} else if err != nil {
+			return fmt.Errorf("Error encountered: %v", err)
+		}
+		return
+	})
+}
+
+func withRunningServer(t *testing.T, callback func(clici *CliciServer, ws *websocket.Conn)) {
 	port := 8080
 	for ; port <= 8100; port++ {
 		lis, err := net.ListenTCP("tcp", &net.TCPAddr{Port: port})
@@ -80,7 +78,7 @@ func withRunningServer(t *testing.T, callback func(clici *Clici, ws *websocket.C
 		t.Fatalf("Could not execute test since all testing ports are occupied or forbidden (8080...8100)")
 	}
 	log.Printf("Using port %d", port)
-	handler := NewClici(port)
+	handler := New(port)
 	started := make(chan struct{}, 0)
 	go handler.StartAndWait(started)
 	defer func() {

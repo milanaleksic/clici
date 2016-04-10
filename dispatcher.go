@@ -5,11 +5,12 @@ import (
 	"time"
 
 	"github.com/milanaleksic/clici/view"
+	"github.com/milanaleksic/clici/controller"
 )
 
 type dispatcher struct {
 	feedbackChannel chan view.Command
-	controller      *controller
+	controller      *controller.Controller
 }
 
 func (dispatcher *dispatcher) mainLoop() {
@@ -24,9 +25,9 @@ func (dispatcher *dispatcher) mainLoop() {
 				return
 			}
 		case <-ticker.C:
-			dispatcher.controller.RefreshNodeInformation()
+			dispatcher.controller.RefreshNodeInformation(options.Jenkins.Jobs)
 		case <-firstRun:
-			dispatcher.controller.RefreshNodeInformation()
+			dispatcher.controller.RefreshNodeInformation(options.Jenkins.Jobs)
 		}
 	}
 }

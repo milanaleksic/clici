@@ -9,6 +9,12 @@ const (
 	registrationTable = "registration"
 )
 
+type ConnectionID string
+
+func (connectionId *ConnectionID) String() string {
+	return string(*connectionId)
+}
+
 // Mapping is a wrapper around an in-memory database which will handle current connections
 // and metadata related to them
 type Mapping struct {
@@ -17,18 +23,11 @@ type Mapping struct {
 
 // RegisterClient allows registering a certain connection with all requested jobs.
 // For a single connection id, this call can be executed multiple times
-func (mapping *Mapping) RegisterClient(id string, registrationRequest Register) {
+func (mapping *Mapping) RegisterClient(id ConnectionID, reg Registration) {
 	txn := mapping.db.Txn(true)
 
-	for _, job := range registrationRequest.GetJobs() {
-		reg := &registration{
-			ConnectionID:   id,
-			ServerLocation: job.ServerLocation,
-			JobName:        job.JobName,
-		}
-		if err := txn.Insert(registrationTable, reg); err != nil {
-			panic(err)
-		}
+	if err := txn.Insert(registrationTable, reg); err != nil {
+		panic(err)
 	}
 
 	txn.Commit()
@@ -36,9 +35,9 @@ func (mapping *Mapping) RegisterClient(id string, registrationRequest Register) 
 }
 
 // UnRegisterClient will remove all mappings from the in-memory DB for a certain connection id
-func (mapping *Mapping) UnRegisterClient(id string) {
+func (mapping *Mapping) UnRegisterClient(id ConnectionID) {
 	txn := mapping.db.Txn(true)
-	n, err := txn.DeleteAll(registrationTable, "connid", id)
+	n, err := txn.DeleteAll(registrationTable, "connid", id.String())
 	if err != nil {
 		log.Printf("Failed when deleting connection records from in-memory DB: %v", err)
 	} else {
@@ -48,13 +47,56 @@ func (mapping *Mapping) UnRegisterClient(id string) {
 	log.Println("Connection removed")
 }
 
-type registration struct {
+func (mapping *Mapping) GetAllUniqueJobs() (serverToJobRegistrations map[string][]Registration) {
+	txn := mapping.db.Txn(false)
+	iterator, err := txn.Get(registrationTable, "jobs")
+	if err != nil {
+		log.Fatalf("Failed when listing records from in-memory DB: %v", err)
+	}
+	serverToJobRegistrations = make(map[string][]Registration, 0)
+	var iter interface{}
+	for {
+		iter = iterator.Next()
+		if iter == nil {
+			break
+		}
+		reg := iter.(Registration)
+		serverToJobRegistrations[reg.ServerLocation] = append(serverToJobRegistrations[reg.ServerLocation], reg)
+	}
+	return
+}
+
+func (mapping *Mapping) FindAllRegisteredConnectionsForServerAndJob(server string, jobName string) (connIds []ConnectionID) {
+	txn := mapping.db.Txn(false)
+	iterator, err := txn.Get(registrationTable, "jobs", )
+	if err != nil {
+		log.Fatalf("Failed when listing records from in-memory DB: %v", err)
+	}
+	connIdsSet := make(map[ConnectionID]bool, 0)
+	var iter interface{}
+	for {
+		iter = iterator.Next()
+		if iter == nil {
+			break
+		}
+		reg := iter.(Registration)
+		connIdsSet[reg.ConnectionID] = true
+	}
+	connIds = make([]ConnectionID, 0)
+	for connID := range connIdsSet {
+		connIds = append(connIds, connID)
+	}
+	return
+}
+
+
+type Registration struct {
 	// ConnectionID is a unique string identifying an active connection from clici client
-	ConnectionID string
+	ConnectionID   ConnectionID
 	// ServerLocation is a location of a Jenkins server some connection is interested in
 	ServerLocation string
 	// JobName refers to a certain job in the server defined via ServerLocation
-	JobName string
+	JobName        string
 }
 
 // NewMapping creates a single empty Mapping abstraction with ready-for-usage in-memory DB
@@ -81,6 +123,16 @@ func NewMapping() *Mapping {
 						Indexer: &memdb.CompoundIndex{
 							Indexes: []memdb.Indexer{
 								&memdb.StringFieldIndex{Field: "ConnectionID"},
+							},
+						},
+					},
+					"jobs": &memdb.IndexSchema{
+						Name:   "jobs",
+						Unique: false,
+						Indexer: &memdb.CompoundIndex{
+							Indexes: []memdb.Indexer{
+								&memdb.StringFieldIndex{Field: "ServerLocation"},
+								&memdb.StringFieldIndex{Field: "JobName"},
 							},
 						},
 					},
