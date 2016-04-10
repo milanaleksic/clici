@@ -2,15 +2,13 @@ package server
 
 import (
 	"fmt"
+	"golang.org/x/net/websocket"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"strings"
-
-	"net"
 	"syscall"
-
-	"golang.org/x/net/websocket"
 )
 
 const (
@@ -88,41 +86,49 @@ func (h *Clici) registerHandler(ws *websocket.Conn) {
 	id := randomStringFromBytes(8)
 	lepr := &LengthEncodedProtoReaderWriter{UnderlyingReadWriter: ws}
 	newRegistrations := make(chan Register)
-	clientLeft := make(chan struct{})
+	clientLeft := make(chan bool)
 	go func() {
+		defer func() { clientLeft <- true }()
 		for {
 			register := Register{}
 			err := lepr.ReadProto(&register)
 			if err != nil {
-				if err == io.EOF {
-					// ignore
+				if err.Error() == io.EOF.Error() {
+					//	 ignore
 				} else if strings.Contains(err.Error(), syscall.ECONNRESET.Error()) {
-					return
+					//	 ignore
+				} else if strings.Contains(err.Error(), "closed network connection") {
+					//	 ignore
 				} else {
 					log.Printf("Failure receiving: %v, terminating connection", err)
 				}
 				_ = lepr.UnderlyingReadWriter.Close()
-				break
+				return
 			}
 
-			if !h.respondAllOk(lepr) {
-				break
+			newRegistrations <- register
+
+			if !h.respondAllOk(lepr, id) {
+				return
 			}
 		}
-		clientLeft <- struct{}{}
 	}()
-	select {
-	case requestedMappings := <-newRegistrations:
-		h.mapping.RegisterClient(id, requestedMappings)
-	case <-clientLeft:
-		h.mapping.UnRegisterClient(id)
+	for {
+		select {
+		case requestedMappings := <-newRegistrations:
+			h.mapping.RegisterClient(id, requestedMappings)
+		case <-clientLeft:
+			h.mapping.UnRegisterClient(id)
+			break
+		}
 	}
 }
 
-func (h *Clici) respondAllOk(lepr *LengthEncodedProtoReaderWriter) bool {
+func (h *Clici) respondAllOk(lepr *LengthEncodedProtoReaderWriter, id string) bool {
 	response := RegisterResponse{
 		Version: Version,
 		Success: true,
+		Connid:  id,
 	}
 	if err := lepr.WriteProto(&response); err != nil {
 		log.Printf("Failure responding to request: %v, terminating connection", err)

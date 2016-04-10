@@ -11,10 +11,16 @@ import (
 	"net"
 
 	"golang.org/x/net/websocket"
+	"time"
 )
 
 func TestRegistration(t *testing.T) {
-	withRunningServer(t, func(ws *websocket.Conn) {
+	var mapping *Mapping
+	var registration interface{}
+	var connid string
+	var err error
+	withRunningServer(t, func(clici *Clici, ws *websocket.Conn) {
+		mapping = clici.mapping
 		request := &Register{
 			Jobs: []*Register_Job{
 				&Register_Job{
@@ -33,10 +39,35 @@ func TestRegistration(t *testing.T) {
 		} else if !response.Success {
 			t.Fatalf("registration failed")
 		}
+		var err error
+		for i := 0; i < 100; i++ {
+			tx := clici.mapping.db.Txn(false)
+			registration, err = tx.First(registrationTable, "connid", response.Connid)
+			if registration != nil && err == nil {
+				break
+			}
+			time.Sleep(5 * time.Millisecond)
+		}
+		if registration == nil || err != nil {
+			t.Fatalf("registration did not create new record in memdb on server side: err=%v, registration=%v", err, registration)
+		}
+		connid = response.Connid
 	})
+
+	for i := 0; i < 100; i++ {
+		tx := mapping.db.Txn(false)
+		registration, err = tx.First(registrationTable, "connid", connid)
+		if registration == nil && err == nil {
+			break
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+	if registration != nil || err != nil {
+		t.Fatalf("closing did not remove connection from memdb: err=%v, registration=%v", err, registration)
+	}
 }
 
-func withRunningServer(t *testing.T, callback func(ws *websocket.Conn)) {
+func withRunningServer(t *testing.T, callback func(clici *Clici, ws *websocket.Conn)) {
 	port := 8080
 	for ; port <= 8100; port++ {
 		lis, err := net.ListenTCP("tcp", &net.TCPAddr{Port: port})
@@ -70,7 +101,10 @@ func withRunningServer(t *testing.T, callback func(ws *websocket.Conn)) {
 
 	<-started
 
-	callback(dial(t, port))
+	ws := dial(t, port)
+	defer ws.Close()
+
+	callback(&handler, ws)
 }
 
 func dial(t *testing.T, port int) (ws *websocket.Conn) {

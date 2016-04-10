@@ -15,4 +15,5 @@ message Register {
 message RegisterResponse {
     string version = 1;
     bool success = 2;
+    string connid = 3;
 }

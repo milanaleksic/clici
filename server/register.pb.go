@@ -50,6 +50,7 @@ func (*Register_Job) ProtoMessage()    {}
 type RegisterResponse struct {
 	Version string `protobuf:"bytes,1,opt,name=version" json:"version,omitempty"`
 	Success bool   `protobuf:"varint,2,opt,name=success" json:"success,omitempty"`
+	Connid  string `protobuf:"bytes,3,opt,name=connid" json:"connid,omitempty"`
 }
 
 func (m *RegisterResponse) Reset()         { *m = RegisterResponse{} }

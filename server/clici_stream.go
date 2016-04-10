@@ -27,8 +27,12 @@ func (lep *LengthEncodedProtoReaderWriter) readSize() (size int, err error) {
 	var preciseSize int32
 	err = binary.Read(lep.UnderlyingReadWriter, binary.LittleEndian, &preciseSize)
 	if err != nil {
-		err = fmt.Errorf("Failure reading length: %v", err)
-		return
+		if err.Error() == io.EOF.Error() {
+			return
+		} else {
+			err = fmt.Errorf("Failure reading length: %v", err)
+			return
+		}
 	}
 	size = int(preciseSize)
 	return

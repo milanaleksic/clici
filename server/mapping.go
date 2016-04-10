@@ -32,6 +32,7 @@ func (mapping *Mapping) RegisterClient(id string, registrationRequest Register) 
 	}
 
 	txn.Commit()
+	log.Println("Connection registered")
 }
 
 // UnRegisterClient will remove all mappings from the in-memory DB for a certain connection id
@@ -44,6 +45,7 @@ func (mapping *Mapping) UnRegisterClient(id string) {
 		log.Printf("Client unregistered, jobs deleted: %d", n)
 	}
 	txn.Commit()
+	log.Println("Connection removed")
 }
 
 type registration struct {
