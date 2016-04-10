@@ -29,10 +29,9 @@ func (lep *LengthEncodedProtoReaderWriter) readSize() (size int, err error) {
 	if err != nil {
 		if err.Error() == io.EOF.Error() {
 			return
-		} else {
-			err = fmt.Errorf("Failure reading length: %v", err)
-			return
 		}
+		err = fmt.Errorf("Failure reading length: %v", err)
+		return
 	}
 	size = int(preciseSize)
 	return
