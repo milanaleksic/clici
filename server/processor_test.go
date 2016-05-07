@@ -8,6 +8,8 @@ import (
 
 	"github.com/milanaleksic/clici/jenkins"
 	"log"
+	"github.com/milanaleksic/clici/model"
+	"sync"
 )
 
 const username = "Some user"
@@ -44,7 +46,7 @@ func (api *testAPI) GetCurrentStatus(job string) (status *jenkins.JobStatus, err
 	result := &jenkins.JobStatus{
 		Building:          rand.Intn(2) == 0,
 		EstimatedDuration: int64(rand.Intn(300000)),
-		Timestamp:         time.Now().UnixNano()/1000/1000 - int64(rand.Intn(300000)),
+		Timestamp:         time.Now().UnixNano() / 1000 / 1000 - int64(rand.Intn(300000)),
 		Culprits:          culprits,
 		Actions: []jenkins.Action{
 			jenkins.Action{
@@ -90,29 +92,34 @@ func (api *testAPI) GetFailedTestList(job string) (testCaseResult []jenkins.Test
 	return
 }
 
-
 func TestProcessor(t *testing.T) {
-	api := testAPI{ color: "blue" }
-	processor := NewProcessorWithSupplier(
-		func() jenkins.API { return &api },
-	)
-	processor.mapping.RegisterClient("12345", registration{
-		ConnectionID:   "12345",
-		ServerLocation: "localhost",
-		JobName:        "job1",
-	})
-	connIDToJobStates := processor.ProcessMappings()
-	if len(connIDToJobStates) != 1 {
-		t.Fatalf("No unique mapping change detected, %v", connIDToJobStates)
-	}
-	if len(connIDToJobStates["12345"]) != 1 {
-		t.Fatalf("No unique mapping change detected for id, %v", connIDToJobStates)
-	}
-	log.Printf("Known job states: %v", connIDToJobStates["12345"][0])
-	processor.mapping.UnRegisterClient("12345")
+	var wg sync.WaitGroup
+	wg.Add(1)
 
-	connIDToJobStates = processor.ProcessMappings()
-	if len(connIDToJobStates) != 0 {
-		t.Errorf("After de-registration, no registration expected! %v", connIDToJobStates)
-	}
+	api := testAPI{color: "blue" }
+	outputChannel := make(chan model.JobState)
+	processor := NewProcessorWithSupplier(
+		func(server string) jenkins.API {
+			return &api
+		},
+	)
+
+	go func() {
+		ticker := time.NewTicker(100 * time.Millisecond)
+		defer ticker.Stop()
+		select {
+		case jobState := <-outputChannel:
+			log.Printf("jobState=%v", jobState)
+			wg.Done()
+		case <-ticker.C:
+			t.Fatalf("Timed out waiting for the response from processor")
+		}
+	}()
+
+	processor.RegisterClient("12345", "localhost", "job1", outputChannel)
+	defer processor.mapping.UnRegisterClient("12345")
+
+	processor.ProcessMappings()
+
+	wg.Wait()
 }

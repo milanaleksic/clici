@@ -2,13 +2,16 @@ package server
 
 import (
 	"fmt"
-	"golang.org/x/net/websocket"
 	"io"
 	"log"
 	"net"
 	"net/http"
 	"strings"
 	"syscall"
+
+	"github.com/milanaleksic/clici/jenkins"
+	"golang.org/x/net/websocket"
+	"github.com/milanaleksic/clici/model"
 )
 
 const (
@@ -32,17 +35,18 @@ type CliciServer struct {
 	// gracefully shutdown the server
 	Secret string
 	// Port is the port which will be occupied by the server
-	Port    int
-	mapping *Mapping
+	Port      int
+	processor *Processor
 }
 
 // New creates a new Clici server behind a certain port.
 // Nothing will be started until StartAndWait is called though.
 func New(port int) CliciServer {
 	clici := CliciServer{
-		ServeMux: http.NewServeMux(), Port: port,
+		ServeMux:  http.NewServeMux(),
+		Port:      port,
+		processor: NewProcessorWithSupplier(jenkins.NewAPI),
 	}
-	clici.mapping = NewMapping()
 	return clici
 }
 
@@ -60,7 +64,7 @@ func (h *CliciServer) StartAndWait(started chan<- struct{}) {
 
 	h.registerRandomizedShutdownHook()
 
-	h.ServeMux.Handle("/ws", websocket.Handler(h.registerHandler))
+	h.ServeMux.Handle("/ws", websocket.Handler(h.clientHandler))
 
 	started <- struct{}{}
 	if err = http.Serve(lis, h); err != nil && !h.closedGracefully {
@@ -82,9 +86,9 @@ func (h *CliciServer) registerRandomizedShutdownHook() {
 	})
 }
 
-func (h *CliciServer) processRegistrationRequests(id ConnectionID, newRegistrations chan<- Register, clientLeft chan<- bool, ws io.ReadWriteCloser) {
+func (h *CliciServer) processRegistrationRequestsFromClient(id ConnectionID, newRegistrations chan<- Register, clientLeft chan<- bool, lepr *LengthEncodedProtoReaderWriter) {
 	defer func() { clientLeft <- true }()
-	lepr := &LengthEncodedProtoReaderWriter{UnderlyingReadWriter: ws}
+
 	for {
 		register := Register{}
 		err := lepr.ReadProto(&register)
@@ -110,23 +114,43 @@ func (h *CliciServer) processRegistrationRequests(id ConnectionID, newRegistrati
 	}
 }
 
-func (h *CliciServer) registerHandler(ws *websocket.Conn) {
+func (h *CliciServer) processOutgoingUpdates(id ConnectionID, outgoingJobStateChannel <-chan model.JobState, clientLeft <-chan bool, lepr io.Writer) {
+	for {
+		select {
+		case state := <-outgoingJobStateChannel:
+			log.Printf("Publishing state %v to client behind %v", state, id)
+			// TODO: just a POC, a DTO should be streamed
+			_, _ = lepr.Write([]byte(fmt.Sprintf("%v", state)))
+		case <-clientLeft:
+			log.Printf("Connect %v left", id)
+			return
+		}
+	}
+}
+
+func (h *CliciServer) clientHandler(ws *websocket.Conn) {
 	id := ConnectionID(randomStringFromBytes(8))
 	newRegistrations := make(chan Register)
 	clientLeft := make(chan bool)
-	go h.processRegistrationRequests(id, newRegistrations, clientLeft, ws)
-	outer: for {
+	outputChannel := make(chan model.JobState)
+	defer close(outputChannel)
+	defer close(clientLeft)
+	defer close(newRegistrations)
+
+	lepr := &LengthEncodedProtoReaderWriter{UnderlyingReadWriter: ws}
+
+	go h.processRegistrationRequestsFromClient(id, newRegistrations, clientLeft, lepr)
+	go h.processOutgoingUpdates(id, outputChannel, clientLeft, lepr)
+
+outer:
+	for {
 		select {
 		case requestedMappings := <-newRegistrations:
 			for _, job := range requestedMappings.GetJobs() {
-				h.mapping.RegisterClient(id, registration{
-					ConnectionID:   id,
-					ServerLocation: job.ServerLocation,
-					JobName:        job.JobName,
-				})
+				h.processor.RegisterClient(id, job.ServerLocation, job.JobName, outputChannel)
 			}
 		case <-clientLeft:
-			h.mapping.UnRegisterClient(id)
+			h.processor.UnRegisterClient(id)
 			break outer
 		}
 	}

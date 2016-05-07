@@ -12,18 +12,20 @@ import (
 
 	"golang.org/x/net/websocket"
 	"time"
+	"github.com/milanaleksic/clici/jenkins"
+	"io"
 )
 
 func TestRegistration(t *testing.T) {
 	var mapping *Mapping
 	var connid string
 	withRunningServer(t, func(clici *CliciServer, ws *websocket.Conn) {
-		mapping = clici.mapping
+		mapping = clici.processor.mapping
 		request := &Register{
 			Jobs: []*Register_Job{
 				&Register_Job{
 					ServerLocation: "localhost:8101/jenkins/",
-					JobName:        "test_job_1",
+					JobName:        "job1",
 				},
 			},
 		}
@@ -37,14 +39,37 @@ func TestRegistration(t *testing.T) {
 		} else if !response.Success {
 			t.Fatalf("registration failed")
 		}
-		if err := assertConnectionRegisteredInMapping(clici.mapping, response.Connid, true); err != nil {
+		if err := assertConnectionRegisteredInMapping(clici.processor.mapping, response.Connid, true); err != nil {
 			t.Fatalf("registration did not create new record in memdb on server side: err=%v", err)
 		}
+
+		clici.processor.ProcessMappings()
+
+		readStateFromWire(t, ws)
+
 		connid = response.Connid
 	})
 
 	if err := assertConnectionRegisteredInMapping(mapping, connid, false); err != nil {
 		t.Fatalf("closing did not remove connection from memdb: err=%v", err)
+	}
+}
+
+func readStateFromWire(t *testing.T, ws *websocket.Conn) {
+	msg := make([]byte, 1024)
+	for {
+		n, err := ws.Read(msg)
+		if err != nil {
+			if err == io.EOF {
+				break
+			} else {
+				t.Fatalf("Error while reading response from server: %v", err)
+			}
+		}
+		log.Printf("[WIRE] %v", string(msg[:n]))
+		if n < 1024 {
+			break
+		}
 	}
 }
 
@@ -78,7 +103,13 @@ func withRunningServer(t *testing.T, callback func(clici *CliciServer, ws *webso
 		t.Fatalf("Could not execute test since all testing ports are occupied or forbidden (8080...8100)")
 	}
 	log.Printf("Using port %d", port)
+
 	handler := New(port)
+	api := testAPI{color: "blue" }
+	handler.processor.apiSupplier = func(server string) jenkins.API {
+		return &api
+	}
+
 	started := make(chan struct{}, 0)
 	go handler.StartAndWait(started)
 	defer func() {

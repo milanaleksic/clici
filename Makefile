@@ -23,7 +23,7 @@ ${RELEASE_SOURCES}: ${BINDATA_RELEASE_FILE} $(SOURCES)
 include gomakefiles/semaphore.mk
 
 .PHONY: prepare
-prepare: prepare_metalinter prepare_upx prepare_bindata prepare_github_release
+prepare: prepare_metalinter prepare_upx prepare_bindata prepare_github_release prepare_wago
 
 .PHONY: clean
 clean: clean_common clean_bindata
