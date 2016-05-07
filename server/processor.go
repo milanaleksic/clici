@@ -35,10 +35,6 @@ func (processor *Processor) ProcessMappings() (resp map[ConnectionID][]model.Job
 	log.Printf("Known Registrations: %v", registrationsPerServer)
 	resp = make(map[ConnectionID][]model.JobState)
 	for server, registrations := range registrationsPerServer {
-		var knownJobs []string
-		for _, job := range registrations {
-			knownJobs = append(knownJobs, job)
-		}
 		cont, ok := processor.controllers[server]
 		if !ok {
 			cont = &controller.Controller{
@@ -47,7 +43,7 @@ func (processor *Processor) ProcessMappings() (resp map[ConnectionID][]model.Job
 			}
 			processor.controllers[server] = cont
 		}
-		cont.RefreshNodeInformation(knownJobs)
+		cont.RefreshNodeInformation(registrations)
 	}
 	return
 }

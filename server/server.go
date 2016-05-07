@@ -115,7 +115,7 @@ func (h *CliciServer) registerHandler(ws *websocket.Conn) {
 	newRegistrations := make(chan Register)
 	clientLeft := make(chan bool)
 	go h.processRegistrationRequests(id, newRegistrations, clientLeft, ws)
-	for {
+	outer: for {
 		select {
 		case requestedMappings := <-newRegistrations:
 			for _, job := range requestedMappings.GetJobs() {
@@ -127,7 +127,7 @@ func (h *CliciServer) registerHandler(ws *websocket.Conn) {
 			}
 		case <-clientLeft:
 			h.mapping.UnRegisterClient(id)
-			break
+			break outer
 		}
 	}
 }
