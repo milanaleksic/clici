@@ -6,6 +6,7 @@ include gomakefiles/metalinter.mk
 include gomakefiles/upx.mk
 include gomakefiles/bindata.mk
 include gomakefiles/proto.mk
+include gomakefiles/wago.mk
 
 SOURCES := $(shell find $(SOURCEDIR) -name '*.go' \
 	-not -path '${BINDATA_DEBUG_FILE}' \
