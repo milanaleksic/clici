@@ -9,14 +9,17 @@ import (
 	"github.com/milanaleksic/clici/view"
 )
 
+// APISupplier is a supplier of an API, in case one doesn't want to use default implementations
 type APISupplier func() jenkins.API
 
+// Processor is able to wrap transparently controllers and get which mappings need to be updated with which states
 type Processor struct {
 	mapping     *Mapping
 	controllers map[string](*controller.Controller)
 	apiSupplier APISupplier
 }
 
+// NewProcessorWithSupplier is able to create Processor with the custom supplier
 func NewProcessorWithSupplier(apiSupplier APISupplier) (processor *Processor) {
 	return &Processor{
 		apiSupplier: apiSupplier,
@@ -25,14 +28,16 @@ func NewProcessorWithSupplier(apiSupplier APISupplier) (processor *Processor) {
 	}
 }
 
+// ProcessMappings is the main call for processor which executes a blocking call on all controllers and updates
+// which connections need to be updated with which states
 func (processor *Processor) ProcessMappings() (resp map[ConnectionID][]model.JobState) {
 	registrationsPerServer := processor.mapping.GetAllUniqueJobs()
 	log.Printf("Known Registrations: %v", registrationsPerServer)
 	resp = make(map[ConnectionID][]model.JobState)
 	for server, registrations := range registrationsPerServer {
 		var knownJobs []string
-		for _, reg := range registrations {
-			knownJobs = append(knownJobs, reg.JobName)
+		for _, job := range registrations {
+			knownJobs = append(knownJobs, job)
 		}
 		cont, ok := processor.controllers[server]
 		if !ok {

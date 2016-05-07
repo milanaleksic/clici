@@ -9,9 +9,11 @@ const (
 	registrationTable = "registration"
 )
 
+// ConnectionID is a simple wrapper around a generated ID for incoming client connection
 type ConnectionID string
 
-func (connectionId *ConnectionID) String() string {
+// AsString allows representing the connection ID as a simple string. At this time it just gives underlying string value
+func (connectionId *ConnectionID) AsString() string {
 	return string(*connectionId)
 }
 
@@ -23,7 +25,7 @@ type Mapping struct {
 
 // RegisterClient allows registering a certain connection with all requested jobs.
 // For a single connection id, this call can be executed multiple times
-func (mapping *Mapping) RegisterClient(id ConnectionID, reg Registration) {
+func (mapping *Mapping) RegisterClient(id ConnectionID, reg registration) {
 	txn := mapping.db.Txn(true)
 
 	if err := txn.Insert(registrationTable, reg); err != nil {
@@ -37,7 +39,7 @@ func (mapping *Mapping) RegisterClient(id ConnectionID, reg Registration) {
 // UnRegisterClient will remove all mappings from the in-memory DB for a certain connection id
 func (mapping *Mapping) UnRegisterClient(id ConnectionID) {
 	txn := mapping.db.Txn(true)
-	n, err := txn.DeleteAll(registrationTable, "connid", id.String())
+	n, err := txn.DeleteAll(registrationTable, "connid", id.AsString())
 	if err != nil {
 		log.Printf("Failed when deleting connection records from in-memory DB: %v", err)
 	} else {
@@ -47,25 +49,27 @@ func (mapping *Mapping) UnRegisterClient(id ConnectionID) {
 	log.Println("Connection removed")
 }
 
-func (mapping *Mapping) GetAllUniqueJobs() (serverToJobRegistrations map[string][]Registration) {
+// GetAllUniqueJobs will give all server->jobs mappings
+func (mapping *Mapping) GetAllUniqueJobs() (serverToJobRegistrations map[string][]string) {
 	txn := mapping.db.Txn(false)
 	iterator, err := txn.Get(registrationTable, "jobs")
 	if err != nil {
 		log.Fatalf("Failed when listing records from in-memory DB: %v", err)
 	}
-	serverToJobRegistrations = make(map[string][]Registration, 0)
+	serverToJobRegistrations = make(map[string][]string, 0)
 	var iter interface{}
 	for {
 		iter = iterator.Next()
 		if iter == nil {
 			break
 		}
-		reg := iter.(Registration)
-		serverToJobRegistrations[reg.ServerLocation] = append(serverToJobRegistrations[reg.ServerLocation], reg)
+		reg := iter.(registration)
+		serverToJobRegistrations[reg.ServerLocation] = append(serverToJobRegistrations[reg.ServerLocation], reg.JobName)
 	}
 	return
 }
 
+// FindAllRegisteredConnectionsForServerAndJob will find which connections are interested in particular server+job combination
 func (mapping *Mapping) FindAllRegisteredConnectionsForServerAndJob(server string, jobName string) (connIds []ConnectionID) {
 	txn := mapping.db.Txn(false)
 	iterator, err := txn.Get(registrationTable, "jobs", )
@@ -79,7 +83,7 @@ func (mapping *Mapping) FindAllRegisteredConnectionsForServerAndJob(server strin
 		if iter == nil {
 			break
 		}
-		reg := iter.(Registration)
+		reg := iter.(registration)
 		connIdsSet[reg.ConnectionID] = true
 	}
 	connIds = make([]ConnectionID, 0)
@@ -89,8 +93,7 @@ func (mapping *Mapping) FindAllRegisteredConnectionsForServerAndJob(server strin
 	return
 }
 
-
-type Registration struct {
+type registration struct {
 	// ConnectionID is a unique string identifying an active connection from clici client
 	ConnectionID   ConnectionID
 	// ServerLocation is a location of a Jenkins server some connection is interested in

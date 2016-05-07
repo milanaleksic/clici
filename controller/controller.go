@@ -12,12 +12,15 @@ import (
 	"github.com/skratchdot/open-golang/open"
 )
 
+// Controller is a class that is a backend per-server notification source.
+// It is able to communicate changes detected in state of the Jenkins server back to the View.
 type Controller struct {
 	View      view.View
 	API       jenkins.API
 	state     model.State
 }
 
+// RefreshNodeInformation will start Jenkins API visiting and send updates to the view
 func (controller *Controller) RefreshNodeInformation(knownJobs []string) {
 	log.Println("Controller: RefreshNodeInformation")
 	state := &controller.state
@@ -89,10 +92,12 @@ func (controller *Controller) explainTime(status jenkins.JobStatus) string {
 	return humanize.Time(time.Now().Add(time.Duration(secLeft) * time.Second))
 }
 
+// VisitCurrentJob will open the browser and direct you to the url where last build for a certain job will be shown
 func (controller *Controller) VisitCurrentJob(id int) {
 	controller.visitURL(id, controller.API.GetLastBuildURLForJob)
 }
 
+// VisitPreviousJob will open the browser and direct you to the url where last completed build for a certain job will be shown
 func (controller *Controller) VisitPreviousJob(id int) {
 	controller.visitURL(id, controller.API.GetLastCompletedBuildURLForJob)
 }
@@ -108,6 +113,7 @@ func (controller *Controller) visitURL(id int, urlFromJobName func(job string) s
 	}
 }
 
+// ShowTests will ask Jenkins for failed tests in last execution of a certain job and update view with that info
 func (controller *Controller) ShowTests(id int) {
 	log.Println("Controller: ShowTests")
 	failedTests, err := controller.API.GetFailedTestList(controller.state.JobStates[id].JobName)
@@ -124,12 +130,14 @@ func (controller *Controller) ShowTests(id int) {
 	controller.updateView()
 }
 
+// ShowHelp will update view with a flag to show help
 func (controller *Controller) ShowHelp() {
 	log.Println("Controller: ShowHelp")
 	controller.state.ShowHelp = true
 	controller.updateView()
 }
 
+// RemoveModals will update view with a flag to remove all modal dialogs
 func (controller *Controller) RemoveModals() {
 	log.Println("Controller: RemoveModals")
 	controller.state.ShowHelp = false

@@ -96,7 +96,7 @@ func TestProcessor(t *testing.T) {
 	processor := NewProcessorWithSupplier(
 		func() jenkins.API { return &api },
 	)
-	processor.mapping.RegisterClient("12345", Registration{
+	processor.mapping.RegisterClient("12345", registration{
 		ConnectionID:   "12345",
 		ServerLocation: "localhost",
 		JobName:        "job1",

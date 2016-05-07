@@ -82,7 +82,7 @@ func (h *CliciServer) registerRandomizedShutdownHook() {
 	})
 }
 
-func (h *CliciServer) processRegistrationRequests(id ConnectionID, newRegistrations chan<- Register, clientLeft chan<- bool, ws *websocket.Conn) {
+func (h *CliciServer) processRegistrationRequests(id ConnectionID, newRegistrations chan<- Register, clientLeft chan<- bool, ws io.ReadWriteCloser) {
 	defer func() { clientLeft <- true }()
 	lepr := &LengthEncodedProtoReaderWriter{UnderlyingReadWriter: ws}
 	for {
@@ -119,7 +119,7 @@ func (h *CliciServer) registerHandler(ws *websocket.Conn) {
 		select {
 		case requestedMappings := <-newRegistrations:
 			for _, job := range requestedMappings.GetJobs() {
-				h.mapping.RegisterClient(id, Registration{
+				h.mapping.RegisterClient(id, registration{
 					ConnectionID:   id,
 					ServerLocation: job.ServerLocation,
 					JobName:        job.JobName,
@@ -136,7 +136,7 @@ func (h *CliciServer) respondAllOk(lepr *LengthEncodedProtoReaderWriter, id Conn
 	response := RegisterResponse{
 		Version: Version,
 		Success: true,
-		Connid:  id.String(),
+		Connid:  id.AsString(),
 	}
 	if err := lepr.WriteProto(&response); err != nil {
 		log.Printf("Failure responding to request: %v, terminating connection", err)

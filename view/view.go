@@ -12,11 +12,14 @@ type View interface {
 	Close()
 }
 
+// CallbackAsView is a simple wrapper for views that are simple and identified via a simple callback function
 type CallbackAsView func(state *model.State)
 
+// PresentState will just execute underlying function with updated state
 func (callback CallbackAsView) PresentState(state *model.State) {
 	callback(state)
 }
 
+// Close is ignored in this case
 func (callback CallbackAsView) Close() {
 }
