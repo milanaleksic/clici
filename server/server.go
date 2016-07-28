@@ -133,7 +133,6 @@ func (h *CliciServer) clientHandler(ws *websocket.Conn) {
 	newRegistrations := make(chan Register)
 	clientLeft := make(chan bool)
 	outputChannel := make(chan model.JobState)
-	defer close(outputChannel)
 	defer close(clientLeft)
 	defer close(newRegistrations)
 
