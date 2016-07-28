@@ -4,6 +4,7 @@ package jenkins
 type API interface {
 	GetKnownJobs() (resultFromJenkins *Status, err error)
 	GetCurrentStatus(job string) (status *JobStatus, err error)
+	GetStatusForJob(job string, jobId string) (status *JobStatus, err error)
 	CausesFriendly(status *JobStatus) string
 	CausesOfPreviousFailuresFriendly(job string) string
 	GetLastBuildURLForJob(job string) string

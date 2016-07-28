@@ -32,10 +32,10 @@ func (api *ServerAPI) GetLastCompletedBuildURLForJob(job string) string {
 
 // GetCurrentStatus returns current state for a particular job
 func (api *ServerAPI) GetCurrentStatus(job string) (status *JobStatus, err error) {
-	return api.getStatusForJob(job, lastBuild)
+	return api.GetStatusForJob(job, lastBuild)
 }
 
-func (api *ServerAPI) getStatusForJob(job string, id string) (status *JobStatus, err error) {
+func (api *ServerAPI) GetStatusForJob(job string, id string) (status *JobStatus, err error) {
 	possibleCacheKey := fmt.Sprintf("%s-%s", job, id)
 	if id != lastBuild && id != lastCompletedBuild {
 		if api.cachedStatuses == nil {
@@ -93,7 +93,7 @@ func (api *ServerAPI) CausesOfPreviousFailuresFriendly(name string) string {
 	set := make(map[string]bool, 0)
 	id := lastCompletedBuild
 	for {
-		statusIterator, err := api.getStatusForJob(name, id)
+		statusIterator, err := api.GetStatusForJob(name, id)
 		if err != nil {
 			log.Println("Could not fetch causes: ", err)
 			return "?"
@@ -141,7 +141,7 @@ func (api *ServerAPI) addActionIdsToSet(set map[string]bool, actions []Action) {
 }
 
 func (api *ServerAPI) addCauses(upstreamProject string, upstreamBuild int) (target []string, err error) {
-	status, err := api.getStatusForJob(upstreamProject, strconv.Itoa(upstreamBuild))
+	status, err := api.GetStatusForJob(upstreamProject, strconv.Itoa(upstreamBuild))
 	target = make([]string, 0)
 	if err != nil {
 		return
