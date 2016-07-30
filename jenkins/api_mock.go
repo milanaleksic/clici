@@ -69,8 +69,8 @@ func (api *MockAPI) GetCurrentStatus(job string) (status *JobStatus, err error) 
 	return result, nil
 }
 
-// GetCurrentStatus is a MOCK for call that returns state for a particular job run
-func (api *MockAPI) GetStatusForJob(job string, jobId string) (status *JobStatus, err error) {
+// GetStatusForJob is a MOCK for call that returns state for a particular job run
+func (api *MockAPI) GetStatusForJob(job string, jobID string) (status *JobStatus, err error) {
 	return api.GetCurrentStatus(job)
 }
 

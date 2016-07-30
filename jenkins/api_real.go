@@ -35,6 +35,7 @@ func (api *ServerAPI) GetCurrentStatus(job string) (status *JobStatus, err error
 	return api.GetStatusForJob(job, lastBuild)
 }
 
+// GetStatusForJob returns a status of a specific job run
 func (api *ServerAPI) GetStatusForJob(job string, id string) (status *JobStatus, err error) {
 	possibleCacheKey := fmt.Sprintf("%s-%s", job, id)
 	if id != lastBuild && id != lastCompletedBuild {
