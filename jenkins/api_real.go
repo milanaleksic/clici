@@ -185,7 +185,7 @@ func (api *ServerAPI) GetFailedTestList(job string) (results []TestCase, err err
 	results = make([]TestCase, 0)
 	for _, suite := range received.Suites {
 		for _, aCase := range suite.Cases {
-			if aCase.Status != "PASSED" && aCase.Status != "SKIPPED" {
+			if aCase.Status != "PASSED" && aCase.Status != "SKIPPED" && aCase.Status != "FIXED" {
 				results = append(results, aCase)
 			}
 		}
