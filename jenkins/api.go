@@ -6,6 +6,7 @@ type API interface {
 	GetCurrentStatus(job string) (status *JobStatus, err error)
 	GetStatusForJob(job string, jobID string) (status *JobStatus, err error)
 	CausesFriendly(status *JobStatus) string
+	CausesOfFailuresFriendly(name, id string) string
 	CausesOfPreviousFailuresFriendly(job string) string
 	GetLastBuildURLForJob(job string) string
 	GetLastCompletedBuildURLForJob(job string) string

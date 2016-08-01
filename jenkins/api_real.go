@@ -88,11 +88,10 @@ func (api *ServerAPI) CausesFriendly(status *JobStatus) string {
 	return joinKeysInCsv(set)
 }
 
-// CausesOfPreviousFailuresFriendly finds reasons why a particular job previously fail,
+// CausesOfFailuresFriendly finds reasons why a particular job which previously failed,
 // returning a CSV list of people who caused it
-func (api *ServerAPI) CausesOfPreviousFailuresFriendly(name string) string {
+func (api *ServerAPI) CausesOfFailuresFriendly(name, id string) string {
 	set := make(map[string]bool, 0)
-	id := lastCompletedBuild
 	for {
 		statusIterator, err := api.GetStatusForJob(name, id)
 		if err != nil {
@@ -112,6 +111,12 @@ func (api *ServerAPI) CausesOfPreviousFailuresFriendly(name string) string {
 		id = strconv.Itoa(currentID - 1)
 	}
 	return joinKeysInCsv(set)
+}
+
+// CausesOfPreviousFailuresFriendly finds reasons why the last execution of this job failed,
+// returning a CSV list of people who caused it
+func (api *ServerAPI) CausesOfPreviousFailuresFriendly(name string) string {
+	return api.CausesOfFailuresFriendly(name, lastCompletedBuild)
 }
 
 func (api *ServerAPI) addCulpritIdsToSet(set map[string]bool, culprits []Culprit) {

@@ -61,6 +61,10 @@ func (api *testAPI) GetStatusForJob(job string, id string) (status *jenkins.JobS
 	return api.GetCurrentStatus(job)
 }
 
+func (api *testAPI) CausesOfFailuresFriendly(name, id string) string{
+	return username
+}
+
 func (api *testAPI) CausesFriendly(status *jenkins.JobStatus) string {
 	return username
 }

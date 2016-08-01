@@ -84,7 +84,13 @@ func (api *MockAPI) CausesFriendly(status *JobStatus) string {
 	return joinKeysInCsv(set)
 }
 
-// CausesOfPreviousFailuresFriendly is a MOCK for call that finds reasons why a particular job previously fail,
+// CausesOfFailuresFriendly is a MOCK for call that finds reasons why a particular job which previously failed,
+// returning a CSV list of people who caused it
+func (api *MockAPI) CausesOfFailuresFriendly(name, id string) string {
+	return api.CausesFriendly(&JobStatus{})
+}
+
+// CausesOfPreviousFailuresFriendly is a MOCK for call that finds reasons why the last execution of this job failed,
 // returning a CSV list of people who caused it
 func (api *MockAPI) CausesOfPreviousFailuresFriendly(job string) string {
 	return api.CausesFriendly(&JobStatus{})
