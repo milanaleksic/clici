@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"errors"
 )
 
 const (
@@ -173,15 +174,18 @@ func (api *ServerAPI) addCauses(upstreamProject string, upstreamBuild int) (targ
 	return
 }
 
-// GetFailedTestList will return list of test cases that failed in a LAST FAILED job execution
-func (api *ServerAPI) GetFailedTestList(job string) (results []TestCase, err error) {
-	link := fmt.Sprintf("%v/job/%s/lastFailedBuild/testReport/api/json?tree=suites[cases[className,name,status]]", api.ServerLocation, job)
+// GetFailedTestListFor will return list of test cases that failed in a particular job execution
+func (api *ServerAPI) GetFailedTestListFor(job, id string) (results []TestCase, err error) {
+	link := fmt.Sprintf("%v/job/%s/%s/testReport/api/json?tree=suites[cases[className,name,status]]", api.ServerLocation, job, id)
 	log.Printf("Visiting %s\n", link)
 	resp, err := http.Get(link)
 	if err != nil {
 		return
 	}
 	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode == 404 {
+		return nil, errors.New("no test report found")
+	}
 	var received TestCaseResult
 	err = json.NewDecoder(resp.Body).Decode(&received)
 	if err != nil {
@@ -197,4 +201,9 @@ func (api *ServerAPI) GetFailedTestList(job string) (results []TestCase, err err
 		}
 	}
 	return
+}
+
+// GetFailedTestList will return list of test cases that failed in a LAST FAILED job execution
+func (api *ServerAPI) GetFailedTestList(job string) ([]TestCase, error) {
+	return api.GetFailedTestListFor(job, "lastFailedBuild")
 }

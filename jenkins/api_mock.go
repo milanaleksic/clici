@@ -125,3 +125,8 @@ func (api *MockAPI) GetFailedTestList(job string) (testCaseResult []TestCase, er
 	}
 	return
 }
+
+// GetFailedTestListFor is a MOCK for call that will return list of test cases that failed in a particular job execution
+func (api *MockAPI) GetFailedTestListFor(job, id string) (testCaseResult []TestCase, err error) {
+	return api.GetFailedTestList(job)
+}

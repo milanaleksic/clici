@@ -11,6 +11,7 @@ type API interface {
 	GetLastBuildURLForJob(job string) string
 	GetLastCompletedBuildURLForJob(job string) string
 	GetFailedTestList(job string) (testCaseResult []TestCase, err error)
+	GetFailedTestListFor(job, id string) (testCaseResult []TestCase, err error)
 }
 
 // NewMockAPI creates mocking API, usable for testing only
