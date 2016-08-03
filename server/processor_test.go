@@ -22,7 +22,7 @@ func (api *testAPI) GetKnownJobs() (resultFromJenkins *jenkins.Status, err error
 	resultFromJenkins = &jenkins.Status{
 		JobBuildStatus: []jenkins.JobBuildStatus{
 			jenkins.JobBuildStatus{
-				Name:  fmt.Sprintf("job1"),
+				Name:  fmt.Sprint("job1"),
 				Color: api.color,
 			},
 		},
@@ -81,6 +81,10 @@ func (api *testAPI) GetLastCompletedBuildURLForJob(job string) string {
 	return ""
 }
 
+func (api *testAPI) GetFailedTestListFor(job, id string) (testCaseResult []jenkins.TestCase, err error) {
+	return api.GetFailedTestList(job)
+}
+
 func (api *testAPI) GetFailedTestList(job string) (testCaseResult []jenkins.TestCase, err error) {
 	var set []jenkins.TestCase
 	var randomTests = []string{
@@ -120,7 +124,7 @@ func TestProcessor(t *testing.T) {
 			log.Printf("jobState=%v", jobState)
 			wg.Done()
 		case <-ticker.C:
-			t.Fatalf("Timed out waiting for the response from processor")
+			t.Fatal("Timed out waiting for the response from processor")
 		}
 	}()
 
