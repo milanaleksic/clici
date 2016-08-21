@@ -2,6 +2,5 @@ clici
 clici.exe
 clici.log
 upx
-bindata_debug.go
 bindata_release.go
 /clici.toml
