@@ -102,6 +102,7 @@ func (api *ServerAPI) CausesOfFailuresFriendly(name, id string) string {
 		if statusIterator.Result == "SUCCESS" {
 			break
 		}
+		log.Printf("Got actions %+v and culprits %+v from job=%s, id=%s\n", statusIterator.Actions, statusIterator.Culprits, name, id)
 		api.addActionIdsToSet(set, statusIterator.Actions)
 		api.addCulpritIdsToSet(set, statusIterator.Culprits)
 		currentID, err := strconv.Atoi(statusIterator.ID)
@@ -137,6 +138,7 @@ func (api *ServerAPI) addActionIdsToSet(set map[string]bool, actions []Action) {
 				if err != nil {
 					log.Printf("Could not catch causes: %v\n", err)
 				} else {
+					log.Printf("Got causes %+v from job=%s, id=%d\n", new, cause.UpstreamProject, cause.UpstreamBuild)
 					for _, new := range new {
 						set[new] = true
 					}
