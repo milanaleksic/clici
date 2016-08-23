@@ -81,4 +81,5 @@ type TestCase struct {
 	ClassName string `json:"className"`
 	Name      string `json:"name"`
 	Status    string `json:"status"`
+	StdErr    string `json:"stderr"`
 }
