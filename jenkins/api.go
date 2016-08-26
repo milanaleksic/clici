@@ -78,8 +78,8 @@ type TestSuite struct {
 
 // TestCase depicts part of Jenkins API and identifies which particular test case failed while running a job
 type TestCase struct {
-	ClassName string `json:"className"`
-	Name      string `json:"name"`
-	Status    string `json:"status"`
-	StdErr    string `json:"stderr"`
+	ClassName       string `json:"className"`
+	Name            string `json:"name"`
+	Status          string `json:"status"`
+	ErrorStackTrace string `json:"errorStackTrace"`
 }
