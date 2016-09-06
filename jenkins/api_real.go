@@ -99,7 +99,7 @@ func (api *ServerAPI) CausesOfFailuresFriendly(name, id string) string {
 			log.Println("Could not fetch causes: ", err)
 			return "?"
 		}
-		if statusIterator.Result == "SUCCESS" {
+		if statusIterator.Result == "SUCCESS" || statusIterator.Result == "FIXED" {
 			break
 		}
 		log.Printf("Got actions %+v and culprits %+v from job=%s, id=%s\n", statusIterator.Actions, statusIterator.Culprits, name, id)
