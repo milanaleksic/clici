@@ -2,11 +2,11 @@ package jenkins
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"strconv"
-	"errors"
 )
 
 const (

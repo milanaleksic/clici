@@ -4,8 +4,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/milanaleksic/clici/view"
 	"github.com/milanaleksic/clici/controller"
+	"github.com/milanaleksic/clici/view"
 )
 
 type dispatcher struct {
@@ -25,14 +25,14 @@ func (dispatcher *dispatcher) mainLoop() {
 				return
 			}
 		case <-ticker.C:
-			dispatcher.controller.RefreshNodeInformation(options.Jenkins.Jobs)
+			dispatcher.controller.RefreshAllNodeInformation()
 		case <-firstRun:
-			dispatcher.controller.RefreshNodeInformation(options.Jenkins.Jobs)
+			dispatcher.controller.RefreshAllNodeInformation()
 		}
 	}
 }
 
-func (dispatcher *dispatcher) dispatch(x view.Command) (shouldExit bool) {
+func (dispatcher *dispatcher) dispatch(x view.Command) bool {
 	log.Printf("Dispatcher received command: %q\n", x)
 	switch x.Group {
 	case view.CmdShutdownGroup:

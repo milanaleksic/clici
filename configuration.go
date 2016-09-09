@@ -22,7 +22,7 @@ const (
 )
 
 var options struct {
-	Jenkins struct {
+	Jenkins []struct {
 		Location string
 		Jobs     []string
 	}

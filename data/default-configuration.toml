@@ -9,7 +9,7 @@ refresh="15s"
 doLog=false
 
 
-[jenkins]
+[[jenkins]]
 # URL of the Jenkins server
 location = "http://jenkins"
 

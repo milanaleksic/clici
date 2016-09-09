@@ -1,8 +1,9 @@
 package server
 
 import (
-	"github.com/hashicorp/go-memdb"
 	"log"
+
+	"github.com/hashicorp/go-memdb"
 )
 
 const (
@@ -72,7 +73,7 @@ func (mapping *Mapping) GetAllUniqueJobs() (serverToJobRegistrations map[string]
 // FindAllRegisteredConnectionsForServerAndJob will find which connections are interested in particular server+job combination
 func (mapping *Mapping) FindAllRegisteredConnectionsForServerAndJob(server string, jobName string) (connIds []ConnectionID) {
 	txn := mapping.db.Txn(false)
-	iterator, err := txn.Get(registrationTable, "jobs", )
+	iterator, err := txn.Get(registrationTable, "jobs")
 	if err != nil {
 		log.Fatalf("Failed when listing records from in-memory DB: %v", err)
 	}
@@ -95,11 +96,11 @@ func (mapping *Mapping) FindAllRegisteredConnectionsForServerAndJob(server strin
 
 type registration struct {
 	// ConnectionID is a unique string identifying an active connection from clici client
-	ConnectionID   ConnectionID
+	ConnectionID ConnectionID
 	// ServerLocation is a location of a Jenkins server some connection is interested in
 	ServerLocation string
 	// JobName refers to a certain job in the server defined via ServerLocation
-	JobName        string
+	JobName string
 }
 
 // NewMapping creates a single empty Mapping abstraction with ready-for-usage in-memory DB

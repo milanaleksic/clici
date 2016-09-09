@@ -6,10 +6,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/milanaleksic/clici/jenkins"
 	"log"
-	"github.com/milanaleksic/clici/model"
 	"sync"
+
+	"github.com/milanaleksic/clici/jenkins"
+	"github.com/milanaleksic/clici/model"
 )
 
 const username = "Some user"
@@ -46,7 +47,7 @@ func (api *testAPI) GetCurrentStatus(job string) (status *jenkins.JobStatus, err
 	result := &jenkins.JobStatus{
 		Building:          rand.Intn(2) == 0,
 		EstimatedDuration: int64(rand.Intn(300000)),
-		Timestamp:         time.Now().UnixNano() / 1000 / 1000 - int64(rand.Intn(300000)),
+		Timestamp:         time.Now().UnixNano()/1000/1000 - int64(rand.Intn(300000)),
 		Culprits:          culprits,
 		Actions: []jenkins.Action{
 			jenkins.Action{
@@ -61,7 +62,7 @@ func (api *testAPI) GetStatusForJob(job string, id string) (status *jenkins.JobS
 	return api.GetCurrentStatus(job)
 }
 
-func (api *testAPI) CausesOfFailuresFriendly(name, id string) string{
+func (api *testAPI) CausesOfFailuresFriendly(name, id string) string {
 	return username
 }
 
@@ -108,7 +109,7 @@ func TestProcessor(t *testing.T) {
 	var wg sync.WaitGroup
 	wg.Add(1)
 
-	api := testAPI{color: "blue" }
+	api := testAPI{color: "blue"}
 	outputChannel := make(chan model.JobState)
 	processor := NewProcessorWithSupplier(
 		func(server string) jenkins.API {
@@ -124,6 +125,7 @@ func TestProcessor(t *testing.T) {
 			log.Printf("jobState=%v", jobState)
 			wg.Done()
 		case <-ticker.C:
+			wg.Done()
 			t.Fatal("Timed out waiting for the response from processor")
 		}
 	}()

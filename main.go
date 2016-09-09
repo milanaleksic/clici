@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/milanaleksic/clici/controller"
 	"github.com/milanaleksic/clici/jenkins"
 	"github.com/milanaleksic/clici/server"
 	"github.com/milanaleksic/clici/view"
-	"github.com/milanaleksic/clici/controller"
 )
 
 // Version holds the main version string which should be updated externally when building release
@@ -17,24 +17,35 @@ func init() {
 	server.Version = Version
 }
 
-func getAPI() jenkins.API {
+func getAPI() (result []controller.JenkinsAPIRoot) {
 	if options.Application.Mock {
-		return jenkins.NewMockAPI()
+		for _, aServer := range options.Jenkins {
+			result = append(result, controller.JenkinsAPIRoot{
+				API:  jenkins.NewMockAPI(),
+				Jobs: aServer.Jobs,
+			})
+		}
 	}
-	return jenkins.NewAPI(options.Jenkins.Location)
+	for _, aServer := range options.Jenkins {
+		result = append(result, controller.JenkinsAPIRoot{
+			API:  jenkins.NewAPI(aServer.Location),
+			Jobs: aServer.Jobs,
+		})
+	}
+	return
 }
 
 func getUI(feedbackChannel chan view.Command) (ui view.View, err error) {
 	view.AvoidUnicode = options.Interface.AvoidUnicode
 	switch options.Interface.Mode {
 	case interfaceSimple:
-		ui, err = view.NewConsoleInterface(feedbackChannel)
+		ui = view.NewConsoleInterface(feedbackChannel)
 	case interfaceAdvanced:
 		ui, err = view.NewCUIInterface(feedbackChannel)
 	}
 	if err != nil || ui == nil {
 		log.Println("Failure to activate advanced interface", err)
-		ui, err = view.NewConsoleInterface(feedbackChannel)
+		ui = view.NewConsoleInterface(feedbackChannel)
 	}
 	return
 }
@@ -58,8 +69,8 @@ func main() {
 	dispatcher := &dispatcher{
 		feedbackChannel: feedbackChannel,
 		controller: &controller.Controller{
-			View:      ui,
-			API:       getAPI(),
+			View: ui,
+			APIs: getAPI(),
 		},
 	}
 	dispatcher.mainLoop()

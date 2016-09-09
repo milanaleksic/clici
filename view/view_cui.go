@@ -246,7 +246,7 @@ func (ui *CUIInterface) bottomLine() {
 		v.BgColor = gocui.ColorBlack
 		v.FgColor = gocui.ColorWhite
 		v.Frame = false
-		fmt.Fprintf(v, "<q>: Quit   <id>: Go to job   <?>: Show all commands")
+		fmt.Fprint(v, "<q>: Quit   <id>: Go to job   <?>: Show all commands")
 	}
 	if v, err := ui.gui.SetView("bottom_right", maxX-len(fetchedMessage), maxY-2, maxX, maxY); err != nil {
 		checkCui(err)

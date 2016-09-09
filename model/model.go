@@ -48,6 +48,7 @@ const (
 // JobState is full representation of job state in Jenkins, with all known data program can extract at this time
 type JobState struct {
 	JobName          string
+	Server           string
 	CulpritsFriendly string
 	CausesFriendly   string
 	Time             string

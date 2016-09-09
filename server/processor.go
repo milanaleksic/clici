@@ -21,12 +21,12 @@ type Processor struct {
 }
 
 // NewProcessorWithSupplier is able to create Processor with the custom supplier
-func NewProcessorWithSupplier(apiSupplier APISupplier) (processor *Processor) {
+func NewProcessorWithSupplier(apiSupplier APISupplier) *Processor {
 	return &Processor{
 		apiSupplier: apiSupplier,
-		mapping: NewMapping(),
+		mapping:     NewMapping(),
 		controllers: make(map[string](*controller.Controller)),
-		listeners: make(map[ConnectionID](chan<- model.JobState)),
+		listeners:   make(map[ConnectionID](chan<- model.JobState)),
 	}
 }
 
@@ -39,7 +39,13 @@ func (processor *Processor) ProcessMappings() {
 		cont, ok := processor.controllers[server]
 		if !ok {
 			cont = &controller.Controller{
-				API: processor.apiSupplier(server),
+				APIs: []controller.JenkinsAPIRoot{
+					{
+						API:    processor.apiSupplier(server),
+						Server: server,
+						Jobs:   registrations,
+					},
+				},
 				View: view.CallbackAsView(processor.processState(server)),
 			}
 			processor.controllers[server] = cont
@@ -49,7 +55,7 @@ func (processor *Processor) ProcessMappings() {
 	return
 }
 
-func (processor *Processor) processState(server string) (func(state *model.State)) {
+func (processor *Processor) processState(server string) func(state *model.State) {
 	return func(state *model.State) {
 		resp := make(map[ConnectionID][]model.JobState)
 		log.Printf("State received: %v", state)
@@ -69,8 +75,8 @@ func (processor *Processor) processState(server string) (func(state *model.State
 				log.Printf("No listener found for id: %v; all known listeners: %v", id, processor.listeners)
 				continue
 			}
-			for _, model := range models {
-				listener <- model
+			for _, m := range models {
+				listener <- m
 			}
 		}
 	}

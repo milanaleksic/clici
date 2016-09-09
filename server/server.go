@@ -10,8 +10,8 @@ import (
 	"syscall"
 
 	"github.com/milanaleksic/clici/jenkins"
-	"golang.org/x/net/websocket"
 	"github.com/milanaleksic/clici/model"
+	"golang.org/x/net/websocket"
 )
 
 const (

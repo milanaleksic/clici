@@ -35,7 +35,7 @@ func registerInterruptListener(feedbackChannel chan Command) {
 
 // NewConsoleInterface creates a ConsoleInterface, with a feedbackChannel to be used
 // for async command feedback sending, based on keyboard commands by users
-func NewConsoleInterface(feedbackChannel chan Command) (view *ConsoleInterface, err error) {
+func NewConsoleInterface(feedbackChannel chan Command) (view *ConsoleInterface) {
 	fmt.Println("Loading console interface...")
 	view = &ConsoleInterface{}
 	registerInterruptListener(feedbackChannel)

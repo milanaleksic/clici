@@ -10,20 +10,21 @@ import (
 	"log"
 	"net"
 
-	"golang.org/x/net/websocket"
-	"time"
-	"github.com/milanaleksic/clici/jenkins"
 	"io"
+	"time"
+
+	"github.com/milanaleksic/clici/jenkins"
+	"golang.org/x/net/websocket"
 )
 
 func TestRegistration(t *testing.T) {
 	var mapping *Mapping
-	var connid string
+	var connID string
 	withRunningServer(t, func(clici *CliciServer, ws *websocket.Conn) {
 		mapping = clici.processor.mapping
 		request := &Register{
 			Jobs: []*Register_Job{
-				&Register_Job{
+				{
 					ServerLocation: "localhost:8101/jenkins/",
 					JobName:        "job1",
 				},
@@ -37,7 +38,7 @@ func TestRegistration(t *testing.T) {
 		if err := wire.ReadProto(&response); err != nil {
 			t.Fatalf("registration failed with error: %v", err)
 		} else if !response.Success {
-			t.Fatalf("registration failed")
+			t.Fatal("registration failed")
 		}
 		if err := assertConnectionRegisteredInMapping(clici.processor.mapping, response.Connid, true); err != nil {
 			t.Fatalf("registration did not create new record in memdb on server side: err=%v", err)
@@ -47,36 +48,52 @@ func TestRegistration(t *testing.T) {
 
 		readStateFromWire(t, ws)
 
-		connid = response.Connid
+		connID = response.Connid
 	})
 
-	if err := assertConnectionRegisteredInMapping(mapping, connid, false); err != nil {
+	if err := assertConnectionRegisteredInMapping(mapping, connID, false); err != nil {
 		t.Fatalf("closing did not remove connection from memdb: err=%v", err)
 	}
 }
 
 func readStateFromWire(t *testing.T, ws *websocket.Conn) {
-	msg := make([]byte, 1024)
-	for {
-		n, err := ws.Read(msg)
-		if err != nil {
-			if err == io.EOF {
+	timer := time.NewTimer(100 * time.Millisecond)
+	defer timer.Stop()
+	doneChan := make(chan bool)
+	go func() {
+		msg := make([]byte, 1024)
+		for {
+			n, err := ws.Read(msg)
+			if err != nil {
+				if err == io.EOF {
+					break
+				} else {
+					t.Fatalf("Error while reading response from server: %v", err)
+				}
+			}
+			log.Printf("[WIRE] %v", string(msg[:n]))
+			if n < 1024 {
 				break
-			} else {
-				t.Fatalf("Error while reading response from server: %v", err)
 			}
 		}
-		log.Printf("[WIRE] %v", string(msg[:n]))
-		if n < 1024 {
-			break
+		doneChan <- true
+	}()
+
+	for {
+		select {
+		case <-timer.C:
+			t.Fatal("Failed because timer expired!")
+		case <-doneChan:
+			fmt.Println("Done")
+			return
 		}
 	}
 }
 
-func assertConnectionRegisteredInMapping(mapping *Mapping, connid string, shouldExist bool) (err error) {
+func assertConnectionRegisteredInMapping(mapping *Mapping, connID string, shouldExist bool) error {
 	return retry(func() (err error) {
 		tx := mapping.db.Txn(false)
-		registration, err := tx.First(registrationTable, "connid", connid)
+		registration, err := tx.First(registrationTable, "connid", connID)
 		if shouldExist && registration == nil {
 			return fmt.Errorf("Registration is not set: %v", registration)
 		} else if (!shouldExist) && registration != nil {
@@ -100,12 +117,12 @@ func withRunningServer(t *testing.T, callback func(clici *CliciServer, ws *webso
 		}
 	}
 	if port == 8101 {
-		t.Fatalf("Could not execute test since all testing ports are occupied or forbidden (8080...8100)")
+		t.Fatal("Could not execute test since all testing ports are occupied or forbidden (8080...8100)")
 	}
 	log.Printf("Using port %d", port)
 
 	handler := New(port)
-	api := testAPI{color: "blue" }
+	api := testAPI{color: "blue"}
 	handler.processor.apiSupplier = func(server string) jenkins.API {
 		return &api
 	}
@@ -129,7 +146,9 @@ func withRunningServer(t *testing.T, callback func(clici *CliciServer, ws *webso
 	<-started
 
 	ws := dial(t, port)
-	defer func() {_ = ws.Close()} ()
+	defer func() {
+		_ = ws.Close()
+	}()
 
 	callback(&handler, ws)
 }
