@@ -39,13 +39,24 @@ type JobBuildStatus struct {
 
 // JobStatus contains a parsed Jenkins server response about a single job result status
 type JobStatus struct {
-	ID                string    `json:"id"`
-	Result            string    `json:"result"`
-	Building          bool      `json:"building"`
-	Actions           []Action  `json:"actions"`
-	Culprits          []Culprit `json:"culprits"`
-	EstimatedDuration int64     `json:"estimatedDuration"`
-	Timestamp         int64     `json:"timestamp"`
+	ID                string      `json:"id"`
+	Result            string      `json:"result"`
+	Building          bool        `json:"building"`
+	Actions           []Action    `json:"actions"`
+	Culprits          []Culprit   `json:"culprits"`
+	ChangeSets        []ChangeSet `json:"changeSets"`
+	EstimatedDuration int64       `json:"estimatedDuration"`
+	Timestamp         int64       `json:"timestamp"`
+}
+
+// ChangeSet carries all changesets included in this run
+type ChangeSet struct {
+	Items []ChangeSetItem `json:"items"`
+}
+
+// ChangeSetItem contains individual change included in this run
+type ChangeSetItem struct {
+	Author Culprit `json:"author"`
 }
 
 // Culprit is a wrapper around a full name for a culprit
