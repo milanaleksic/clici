@@ -8,7 +8,7 @@ import (
 	"github.com/dustin/go-humanize"
 	"github.com/milanaleksic/clici/jenkins"
 	"github.com/milanaleksic/clici/model"
-	"github.com/milanaleksic/clici/view"
+	"github.com/milanaleksic/clici/cmd/main/view"
 	"github.com/skratchdot/open-golang/open"
 )
 

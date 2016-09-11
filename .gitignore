@@ -4,3 +4,7 @@ clici.log
 upx
 bindata_release.go
 /clici.toml
+/cmd/server/clici_server
+/cmd/server/clici_server.exe
+/cmd/main/clici
+/cmd/main/clici.exe

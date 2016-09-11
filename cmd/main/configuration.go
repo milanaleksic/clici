@@ -56,7 +56,7 @@ func init() {
 	flag.Parse()
 
 	if *buildConfFile {
-		asset, err := dataDefaultConfigurationToml()
+		asset, err := cmdMainDataDefaultConfigurationToml()
 		if err != nil {
 			log.Fatalf("Could not create default TOML configuration file: %v", err)
 		}

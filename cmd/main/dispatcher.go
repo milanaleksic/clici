@@ -4,8 +4,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/milanaleksic/clici/controller"
-	"github.com/milanaleksic/clici/view"
+	"github.com/milanaleksic/clici/cmd/main/controller"
+	"github.com/milanaleksic/clici/cmd/main/view"
 )
 
 type dispatcher struct {

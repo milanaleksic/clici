@@ -4,18 +4,13 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/milanaleksic/clici/controller"
+	"github.com/milanaleksic/clici/cmd/main/controller"
+	"github.com/milanaleksic/clici/cmd/main/view"
 	"github.com/milanaleksic/clici/jenkins"
-	"github.com/milanaleksic/clici/server"
-	"github.com/milanaleksic/clici/view"
 )
 
 // Version holds the main version string which should be updated externally when building release
 var Version = "undefined"
-
-func init() {
-	server.Version = Version
-}
 
 func getAPI() (result []controller.JenkinsAPIRoot) {
 	if options.Application.Mock {
