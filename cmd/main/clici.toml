@@ -1,0 +1,44 @@
+[application]
+# Use mocked data to see how program behaves
+mock=false
+
+# How often to refresh Jenkins status
+refresh="15s"
+
+# Make a log of program execution
+doLog=false
+
+[[jenkins]]
+# URL of the Jenkins server
+location = "http://bwfj-jenkins.basware.com"
+
+# CSV of all jobs on the server you want to track
+jobs = [
+    "AT_build",
+    "AT_ship",
+    "AT_parallel_1",
+    "AT_parallel_2",
+    "AT_parallel_3",
+    "AT_parallel_4",
+    "AT_parallel_5",
+    "AT_parallel_6",
+    "AT_batch4",
+    "INT",
+    "create_release",
+    "install_release"
+]
+
+[[jenkins]]
+location="http://bwfj-jenkins.basware.com/job/Basware_Legal_Archive/"
+jobs = [
+    "UnderDevelopment_BaswareLegalArchive"
+]
+
+[interface]
+# What interface should be used: console, advanced"
+#mode="console"
+mode="advanced"
+
+# Will avoid usage of Unicode characters in terminal. V will mean Success, X will mean Failure, B will mean building
+# It is recommended to set to true for Windows
+avoidUnicode=false
