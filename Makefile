@@ -1,5 +1,6 @@
 PACKAGE := $(shell go list -e)
 APP_NAME = $(lastword $(subst /, ,$(PACKAGE)))
+MAIN_APP_DIR = cmd/main
 
 include gomakefiles/common.mk
 include gomakefiles/metalinter.mk
@@ -7,9 +8,9 @@ include gomakefiles/upx.mk
 include gomakefiles/proto.mk
 include gomakefiles/wago.mk
 
-DATA_DIR := $(SOURCEDIR)/cmd/main/data
-BINDATA_DEBUG_FILE := $(SOURCEDIR)/cmd/main/bindata_debug.go
-BINDATA_RELEASE_FILE := $(SOURCEDIR)/cmd/main/bindata_release.go
+DATA_DIR := $(SOURCEDIR)/$(MAIN_APP_DIR)/data
+BINDATA_DEBUG_FILE := $(SOURCEDIR)/$(MAIN_APP_DIR)/bindata_debug.go
+BINDATA_RELEASE_FILE := $(SOURCEDIR)/$(MAIN_APP_DIR)/bindata_release.go
 include gomakefiles/bindata.mk
 
 SOURCES := $(shell find $(SOURCEDIR) -name '*.go' \
@@ -19,10 +20,10 @@ SOURCES := $(shell find $(SOURCEDIR) -name '*.go' \
 
 EXCLUDES_METALINTER := .*.pb.go|bindata_.*.go
 
-$(APP_NAME): cmd/main/$(APP_NAME)
+$(APP_NAME): $(MAIN_APP_DIR)/$(APP_NAME)
 
-cmd/main/$(APP_NAME): $(SOURCES) $(BINDATA_DEBUG_FILE)
-	cd cmd/main/ && go build -ldflags '-X main.Version=${VERSION}' -o ${APP_NAME}
+$(MAIN_APP_DIR)/$(APP_NAME): $(SOURCES) $(BINDATA_DEBUG_FILE)
+	cd $(MAIN_APP_DIR)/ && go build -ldflags '-X main.Version=${VERSION}' -o ${APP_NAME}
 
 cmd/server/$(APP_NAME)_server: $(SOURCES)
 	cd cmd/server/ && go build -ldflags '-X main.Version=${VERSION}' -o ${APP_NAME}_server
@@ -36,7 +37,7 @@ prepare: prepare_metalinter prepare_upx prepare_bindata prepare_github_release p
 
 .PHONY: clean
 clean: clean_common clean_bindata
-	rm -rf cmd/main/${APP_NAME}
-	rm -rf cmd/main/${APP_NAME}.exe
+	rm -rf $(MAIN_APP_DIR)/${APP_NAME}
+	rm -rf $(MAIN_APP_DIR)/${APP_NAME}.exe
 	rm -rf cmd/server/${APP_NAME}_server
 	rm -rf cmd/server/${APP_NAME}_server.exe
