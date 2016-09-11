@@ -37,8 +37,6 @@ prepare: prepare_metalinter prepare_upx prepare_bindata prepare_github_release p
 .PHONY: clean
 clean: clean_common clean_bindata
 	rm -rf cmd/main/${APP_NAME}
-	rm -rf cmd/main/${APP_NAME}_*
 	rm -rf cmd/main/${APP_NAME}.exe
-	rm -rf cmd/server/${APP_NAME}
-	rm -rf cmd/server/${APP_NAME}_*
-	rm -rf cmd/server/${APP_NAME}.exe
+	rm -rf cmd/server/${APP_NAME}_server
+	rm -rf cmd/server/${APP_NAME}_server.exe

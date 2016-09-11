@@ -4,9 +4,9 @@ import (
 	"log"
 
 	"github.com/milanaleksic/clici/cmd/main/controller"
+	"github.com/milanaleksic/clici/cmd/main/view"
 	"github.com/milanaleksic/clici/jenkins"
 	"github.com/milanaleksic/clici/model"
-	"github.com/milanaleksic/clici/cmd/main/view"
 )
 
 // APISupplier is a supplier of an API, in case one doesn't want to use default implementations
