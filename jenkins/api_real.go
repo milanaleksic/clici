@@ -15,6 +15,10 @@ const (
 	lastBuild          = "lastBuild"
 )
 
+var (
+	internalError_statusPageNotFound = errors.New("Not Found")
+)
+
 // ServerAPI is a real-life implementation of the API which connects to a real Jenkins server.
 // Use the given "ServerLocation" field to set the location of the server.
 type ServerAPI struct {
@@ -55,6 +59,8 @@ func (api *ServerAPI) GetStatusForJob(job string, id string) (*JobStatus, error)
 	resp, err := http.Get(link)
 	if err != nil {
 		return nil, err
+	} else if resp.StatusCode == http.StatusNotFound {
+		return nil, internalError_statusPageNotFound
 	}
 	defer func() { _ = resp.Body.Close() }()
 	result := &JobStatus{}
@@ -94,11 +100,26 @@ func (api *ServerAPI) CausesFriendly(status *JobStatus) string {
 // returning a CSV list of people who caused it
 func (api *ServerAPI) CausesOfFailuresFriendly(name, id string) string {
 	set := make(map[string]bool, 0)
+	var visitsToServerAllowed = 20
 	for {
+		currentID, err := strconv.Atoi(id)
+		if err != nil {
+			log.Printf("Could not parse number: %s, reason: %+v; will give up from fetching further causes\n", id, err)
+			break
+		}
+		visitsToServerAllowed--
+		if visitsToServerAllowed <= 0 {
+			log.Println("Maximum number of visits to Jenkins server reached, giving up from further changes")
+			break
+		}
 		statusIterator, err := api.GetStatusForJob(name, id)
 		if err != nil {
+			if err == internalError_statusPageNotFound {
+				id = strconv.Itoa(currentID - 1)
+				continue
+			}
 			log.Println("Could not fetch causes: ", err)
-			return "?"
+			break
 		}
 		if statusIterator.Result == "SUCCESS" || statusIterator.Result == "FIXED" {
 			break
@@ -107,11 +128,6 @@ func (api *ServerAPI) CausesOfFailuresFriendly(name, id string) string {
 		api.addActionIdsToSet(set, statusIterator)
 		api.addCulpritIdsToSet(set, statusIterator.Culprits)
 		api.addChangeSetsToSet(set, statusIterator.ChangeSets)
-		currentID, err := strconv.Atoi(statusIterator.ID)
-		if err != nil {
-			log.Println("Could not parse number: ", statusIterator.ID, err)
-			return "?"
-		}
 		id = strconv.Itoa(currentID - 1)
 	}
 	return joinKeysInCsv(set)
