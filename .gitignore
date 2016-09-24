@@ -9,3 +9,5 @@ cmd/server/clici_server.exe
 cmd/main/clici
 cmd/main/clici.exe
 cmd/experimental
+.vscode
+
