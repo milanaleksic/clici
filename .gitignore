@@ -10,4 +10,4 @@ cmd/main/clici
 cmd/main/clici.exe
 cmd/experimental
 .vscode
-
+cmd/server/debug

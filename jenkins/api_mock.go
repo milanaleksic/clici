@@ -130,3 +130,12 @@ func (api *MockAPI) GetFailedTestList(job string) (testCaseResult []TestCase, er
 func (api *MockAPI) GetFailedTestListFor(job, id string) (testCaseResult []TestCase, err error) {
 	return api.GetFailedTestList(job)
 }
+
+// GetLastLogLines returns lineCount lines from the console output of a job run
+func (api *MockAPI) GetLastLogLines(job, id string, lineCount int) ([]string, error) {
+	return []string{
+		"line1",
+		"line2",
+		"line3",
+	}, nil
+}

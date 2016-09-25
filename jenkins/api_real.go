@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
@@ -13,10 +14,11 @@ import (
 const (
 	lastCompletedBuild = "lastCompletedBuild"
 	lastBuild          = "lastBuild"
+	sizeOfSuffix       = 2048
 )
 
 var (
-	internalError_statusPageNotFound = errors.New("Not Found")
+	errStatusPageNotFound = errors.New("Not Found")
 )
 
 // ServerAPI is a real-life implementation of the API which connects to a real Jenkins server.
@@ -60,7 +62,7 @@ func (api *ServerAPI) GetStatusForJob(job string, id string) (*JobStatus, error)
 	if err != nil {
 		return nil, err
 	} else if resp.StatusCode == http.StatusNotFound {
-		return nil, internalError_statusPageNotFound
+		return nil, errStatusPageNotFound
 	}
 	defer func() { _ = resp.Body.Close() }()
 	result := &JobStatus{}
@@ -114,7 +116,7 @@ func (api *ServerAPI) CausesOfFailuresFriendly(name, id string) string {
 		}
 		statusIterator, err := api.GetStatusForJob(name, id)
 		if err != nil {
-			if err == internalError_statusPageNotFound {
+			if err == errStatusPageNotFound {
 				id = strconv.Itoa(currentID - 1)
 				continue
 			}
@@ -214,4 +216,54 @@ func (api *ServerAPI) GetFailedTestListFor(job, id string) (results []TestCase, 
 // GetFailedTestList will return list of test cases that failed in a LAST FAILED job execution
 func (api *ServerAPI) GetFailedTestList(job string) ([]TestCase, error) {
 	return api.GetFailedTestListFor(job, "lastFailedBuild")
+}
+
+// GetLastLogLines returns lineCount lines from the console output of a job run
+func (api *ServerAPI) GetLastLogLines(job, id string, lineCount int) (response []string, err error) {
+	fetchData := func() (int, error) {
+		linkForSize := fmt.Sprintf("%v/job/%s/%s/logText/progressiveHtml", api.ServerLocation, job, id)
+		resp, err := http.Head(linkForSize)
+		if err != nil {
+			return 0, err
+		}
+		if resp.StatusCode != 200 {
+			return 0, fmt.Errorf("could not fetch log size, statusCode=%d", resp.StatusCode)
+		}
+		textSize := resp.Header.Get("X-Text-Size")
+		if textSize == "" {
+			return 0, errors.New("size not received from server HEAD call")
+		}
+
+		return strconv.Atoi(textSize)
+	}
+	fetchLines := func(fromByte int) (response []string, err error) {
+		link := fmt.Sprintf("%v/job/%s/%s/logText/progressiveHtml?start=%d", api.ServerLocation, job, id, fromByte)
+		respData, err := http.Get(link)
+		if err != nil {
+			return
+		}
+		defer func() { _ = respData.Body.Close() }()
+		if respData.StatusCode != 200 {
+			return nil, fmt.Errorf("not able to fetch console output: %d", respData.StatusCode)
+		}
+		data, err := ioutil.ReadAll(respData.Body)
+		if err != nil {
+			return nil, err
+		}
+		var dataAsString []string
+		nl, endIter := 0, len(data)-1
+		for i := endIter; i >= 0 && nl < lineCount; i-- {
+			if data[i] == '\n' {
+				nl++
+				dataAsString = append(dataAsString, string(data[i:endIter]))
+				endIter = i
+			}
+		}
+		return dataAsString, nil
+	}
+	size, err := fetchData()
+	if err != nil {
+		return nil, err
+	}
+	return fetchLines(size - sizeOfSuffix)
 }
