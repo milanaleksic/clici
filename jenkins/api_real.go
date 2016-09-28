@@ -250,11 +250,14 @@ func fetchLinesForLastLogLines(link string, lineCount int) (response []string, e
 	var dataAsString []string
 	nl, endIter := 0, len(data)-1
 	for i := endIter; i >= 0 && nl < lineCount; i-- {
-		if data[i] == '\n' {
+		if data[i] == '\n' && i != endIter {
 			nl++
-			dataAsString = append(dataAsString, string(data[i:endIter]))
+			dataAsString = append(dataAsString, string(data[i+1:endIter]))
 			endIter = i
 		}
+	}
+	for i := 0; i < len(dataAsString)/2; i++ {
+		dataAsString[i], dataAsString[len(dataAsString)-i-1] = dataAsString[len(dataAsString)-i-1], dataAsString[i]
 	}
 	return dataAsString, nil
 }
