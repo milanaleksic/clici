@@ -82,6 +82,10 @@ func (api *testAPI) GetLastCompletedBuildURLForJob(job string) string {
 	return ""
 }
 
+func (api *testAPI) GetLastLogLines(job, id string, lineCount int) (response []string, err error) {
+	return []string{"line1", "line2"}, nil
+}
+
 func (api *testAPI) GetFailedTestListFor(job, id string) (testCaseResult []jenkins.TestCase, err error) {
 	return api.GetFailedTestList(job)
 }

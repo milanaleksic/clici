@@ -125,14 +125,14 @@ func (controller *Controller) explainProperStates(jenkinsAPIRoot *JenkinsAPIRoot
 
 	for ind := range jobStates {
 		iterState := jobStates[ind]
-		status, err := jenkinsAPIRoot.API.GetCurrentStatus(iterState.JobName)
-		if err == nil {
+		status, err2 := jenkinsAPIRoot.API.GetCurrentStatus(iterState.JobName)
+		if err2 == nil {
 			iterState.CausesFriendly = jenkinsAPIRoot.API.CausesFriendly(status)
 			iterState.CulpritsFriendly = jenkinsAPIRoot.API.CausesOfPreviousFailuresFriendly(iterState.JobName)
 			iterState.Building = status.Building
 			iterState.Time = controller.explainTime(*status)
 		} else {
-			iterState.Error = err
+			iterState.Error = err2
 		}
 	}
 	if len(jobStates) == 0 {
