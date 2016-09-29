@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -18,7 +19,8 @@ const (
 )
 
 var (
-	errStatusPageNotFound = errors.New("Not Found")
+	errStatusPageNotFound            = errors.New("Not Found")
+	matcherForHTMLAndWeirdCharacters = regexp.MustCompile(`(<[^>]+>)|(\r)`)
 )
 
 // ServerAPI is a real-life implementation of the API which connects to a real Jenkins server.
@@ -234,10 +236,10 @@ func fetchSizeForLastLogLines(linkForSize string) (int, error) {
 	return strconv.Atoi(textSize)
 }
 
-func fetchLinesForLastLogLines(link string, lineCount int) (response []string, err error) {
+func fetchLinesForLastLogLines(link string, lineCount int) ([]string, error) {
 	respData, err := http.Get(link)
 	if err != nil {
-		return
+		return nil, err
 	}
 	defer func() { _ = respData.Body.Close() }()
 	if respData.StatusCode != 200 {
@@ -252,7 +254,8 @@ func fetchLinesForLastLogLines(link string, lineCount int) (response []string, e
 	for i := endIter; i >= 0 && nl < lineCount; i-- {
 		if data[i] == '\n' && i != endIter {
 			nl++
-			dataAsString = append(dataAsString, string(data[i+1:endIter]))
+			cleanLine := matcherForHTMLAndWeirdCharacters.ReplaceAllString(string(data[i+1:endIter]), "")
+			dataAsString = append(dataAsString, cleanLine)
 			endIter = i
 		}
 	}
@@ -263,7 +266,7 @@ func fetchLinesForLastLogLines(link string, lineCount int) (response []string, e
 }
 
 // GetLastLogLines returns lineCount lines from the console output of a job run
-func (api *ServerAPI) GetLastLogLines(job, id string, lineCount int) (response []string, err error) {
+func (api *ServerAPI) GetLastLogLines(job, id string, lineCount int) ([]string, error) {
 	linkForSize := fmt.Sprintf("%v/job/%s/%s/logText/progressiveHtml", api.ServerLocation, job, id)
 	size, err := fetchSizeForLastLogLines(linkForSize)
 	if err != nil {
