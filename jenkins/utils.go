@@ -1,21 +1,14 @@
 package jenkins
 
-import (
-	"sort"
-	"strings"
-)
-
-func joinKeysInCsv(m map[string]bool) string {
-	sep := ", "
+func mapKeysToSlice(m map[string]bool) (b []string) {
 	if len(m) == 0 {
-		return ""
+		return nil
 	}
-	b := make([]string, len(m))
+	b = make([]string, len(m))
 	bp := 0
 	for key := range m {
 		b[bp] = key
 		bp++
 	}
-	sort.Strings(b)
-	return strings.Join(b, sep)
+	return
 }

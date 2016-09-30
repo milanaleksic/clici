@@ -74,26 +74,26 @@ func (api *MockAPI) GetStatusForJob(job string, jobID string) (status *JobStatus
 	return api.GetCurrentStatus(job)
 }
 
-// CausesFriendly is a MOCK for call that takes a known job status and finds people ("causes") that caused it to start,
+// Causes is a MOCK for call that takes a known job status and finds people ("causes") that caused it to start,
 // returning a CSV list of people.
-func (api *MockAPI) CausesFriendly(status *JobStatus) string {
+func (api *MockAPI) Causes(status *JobStatus) []string {
 	set := make(map[string]bool, 0)
 	for i := 0; i < rand.Intn(5); i++ {
 		set[randomCauses[rand.Intn(len(randomCauses))]] = true
 	}
-	return joinKeysInCsv(set)
+	return mapKeysToSlice(set)
 }
 
-// CausesOfFailuresFriendly is a MOCK for call that finds reasons why a particular job which previously failed,
+// CausesOfFailures is a MOCK for call that finds reasons why a particular job which previously failed,
 // returning a CSV list of people who caused it
-func (api *MockAPI) CausesOfFailuresFriendly(name, id string) string {
-	return api.CausesFriendly(&JobStatus{})
+func (api *MockAPI) CausesOfFailures(name, id string) []string {
+	return api.Causes(&JobStatus{})
 }
 
-// CausesOfPreviousFailuresFriendly is a MOCK for call that finds reasons why the last execution of this job failed,
+// CausesOfPreviousFailures is a MOCK for call that finds reasons why the last execution of this job failed,
 // returning a CSV list of people who caused it
-func (api *MockAPI) CausesOfPreviousFailuresFriendly(job string) string {
-	return api.CausesFriendly(&JobStatus{})
+func (api *MockAPI) CausesOfPreviousFailures(job string) []string {
+	return api.Causes(&JobStatus{})
 }
 
 // GetLastBuildURLForJob is a MOCK for call that will create URL towards a page with LAST job execution result for a particular job

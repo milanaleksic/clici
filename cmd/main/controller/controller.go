@@ -127,8 +127,8 @@ func (controller *Controller) explainProperStates(jenkinsAPIRoot *JenkinsAPIRoot
 		iterState := jobStates[ind]
 		status, err2 := jenkinsAPIRoot.API.GetCurrentStatus(iterState.JobName)
 		if err2 == nil {
-			iterState.CausesFriendly = jenkinsAPIRoot.API.CausesFriendly(status)
-			iterState.CulpritsFriendly = jenkinsAPIRoot.API.CausesOfPreviousFailuresFriendly(iterState.JobName)
+			iterState.CausesFriendly = joinInCSV(jenkinsAPIRoot.API.Causes(status))
+			iterState.CulpritsFriendly = joinInCSV(jenkinsAPIRoot.API.CausesOfPreviousFailures(iterState.JobName))
 			iterState.Building = status.Building
 			iterState.Time = controller.explainTime(*status)
 		} else {

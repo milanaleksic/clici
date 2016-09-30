@@ -47,7 +47,7 @@ func (api *testAPI) GetCurrentStatus(job string) (status *jenkins.JobStatus, err
 	result := &jenkins.JobStatus{
 		Building:          rand.Intn(2) == 0,
 		EstimatedDuration: int64(rand.Intn(300000)),
-		Timestamp:         time.Now().UnixNano()/1000/1000 - int64(rand.Intn(300000)),
+		Timestamp:         time.Now().UnixNano() / 1000 / 1000 - int64(rand.Intn(300000)),
 		Culprits:          culprits,
 		Actions: []jenkins.Action{
 			jenkins.Action{
@@ -62,16 +62,16 @@ func (api *testAPI) GetStatusForJob(job string, id string) (status *jenkins.JobS
 	return api.GetCurrentStatus(job)
 }
 
-func (api *testAPI) CausesOfFailuresFriendly(name, id string) string {
-	return username
+func (api *testAPI) CausesOfFailures(name, id string) []string {
+	return []string{username}
 }
 
-func (api *testAPI) CausesFriendly(status *jenkins.JobStatus) string {
-	return username
+func (api *testAPI) Causes(status *jenkins.JobStatus) []string {
+	return []string{username}
 }
 
-func (api *testAPI) CausesOfPreviousFailuresFriendly(job string) string {
-	return api.CausesFriendly(&jenkins.JobStatus{})
+func (api *testAPI) CausesOfPreviousFailures(job string) []string {
+	return api.Causes(&jenkins.JobStatus{})
 }
 
 func (api *testAPI) GetLastBuildURLForJob(job string) string {

@@ -88,21 +88,21 @@ func (api *ServerAPI) GetKnownJobs() (resultFromJenkins *Status, err error) {
 	return resultFromJenkins, nil
 }
 
-// CausesFriendly takes a known job status and finds people ("causes") that caused it to start,
+// Causes takes a known job status and finds people ("causes") that caused it to start,
 // returning a CSV list of people.
 // It might need to visit server again in case it has to follow casual chain
-func (api *ServerAPI) CausesFriendly(status *JobStatus) string {
+func (api *ServerAPI) Causes(status *JobStatus) []string {
 	set := make(map[string]bool, 0)
 	for _, culprit := range status.Culprits {
 		set[culprit.FullName] = true
 	}
 	api.addActionIdsToSet(set, status)
-	return joinKeysInCsv(set)
+	return mapKeysToSlice(set)
 }
 
-// CausesOfFailuresFriendly finds reasons why a particular job which previously failed,
+// CausesOfFailures finds reasons why a particular job which previously failed,
 // returning a CSV list of people who caused it
-func (api *ServerAPI) CausesOfFailuresFriendly(name, id string) string {
+func (api *ServerAPI) CausesOfFailures(name, id string) []string {
 	set := make(map[string]bool, 0)
 	var visitsToServerAllowed = 20
 	for {
@@ -134,13 +134,13 @@ func (api *ServerAPI) CausesOfFailuresFriendly(name, id string) string {
 		api.addChangeSetsToSet(set, statusIterator.ChangeSets)
 		id = strconv.Itoa(currentID - 1)
 	}
-	return joinKeysInCsv(set)
+	return mapKeysToSlice(set)
 }
 
-// CausesOfPreviousFailuresFriendly finds reasons why the last execution of this job failed,
+// CausesOfPreviousFailures finds reasons why the last execution of this job failed,
 // returning a CSV list of people who caused it
-func (api *ServerAPI) CausesOfPreviousFailuresFriendly(name string) string {
-	return api.CausesOfFailuresFriendly(name, lastCompletedBuild)
+func (api *ServerAPI) CausesOfPreviousFailures(name string) []string {
+	return api.CausesOfFailures(name, lastCompletedBuild)
 }
 
 func (api *ServerAPI) addCulpritIdsToSet(set map[string]bool, culprits []Culprit) {
