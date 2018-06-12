@@ -63,10 +63,11 @@ func (api *ServerAPI) GetStatusForJob(job string, id string) (*JobStatus, error)
 	resp, err := http.Get(link)
 	if err != nil {
 		return nil, err
-	} else if resp.StatusCode == http.StatusNotFound {
-		return nil, errStatusPageNotFound
 	}
 	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, errStatusPageNotFound
+	}
 	result := &JobStatus{}
 	err = json.NewDecoder(resp.Body).Decode(&result)
 	if err == nil && id != lastBuild && id != lastCompletedBuild {
@@ -225,6 +226,7 @@ func fetchSizeForLastLogLines(linkForSize string) (int, error) {
 	if err != nil {
 		return 0, err
 	}
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != 200 {
 		return 0, fmt.Errorf("could not fetch log size, statusCode=%d", resp.StatusCode)
 	}
