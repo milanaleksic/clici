@@ -18,6 +18,7 @@ func getAPI() (result []controller.JenkinsAPIRoot) {
 			result = append(result, controller.JenkinsAPIRoot{
 				API:  jenkins.NewMockAPI(),
 				Jobs: aServer.Jobs,
+				Server: aServer.Location,
 			})
 		}
 	}
@@ -25,6 +26,7 @@ func getAPI() (result []controller.JenkinsAPIRoot) {
 		result = append(result, controller.JenkinsAPIRoot{
 			API:  jenkins.NewAPI(aServer.Location),
 			Jobs: aServer.Jobs,
+			Server: aServer.Location,
 		})
 	}
 	return
