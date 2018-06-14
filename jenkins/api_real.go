@@ -27,6 +27,8 @@ var (
 // Use the given "ServerLocation" field to set the location of the server.
 type ServerAPI struct {
 	ServerLocation string
+	Username string
+	Password string
 	cachedStatuses map[string](*JobStatus)
 }
 
@@ -275,4 +277,24 @@ func (api *ServerAPI) GetLastLogLines(job, id string, lineCount int) ([]string, 
 		return nil, err
 	}
 	return fetchLinesForLastLogLines(fmt.Sprintf("%s?start=%d", linkForSize, size-sizeOfSuffix), lineCount)
+}
+
+// RunJob will execute a job (expected - without parameters)
+func (api *ServerAPI) RunJob(job string) error {
+	linkForRun := fmt.Sprintf("%v/job/%s/build?delay=0sec", api.ServerLocation, job)
+	log.Printf("Visiting %s\n", linkForRun)
+	req, err := http.NewRequest("POST", linkForRun, nil)
+	req.SetBasicAuth(api.Username, api.Password)
+	if err != nil {
+		return err
+	}
+	respData, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = respData.Body.Close() }()
+	if respData.StatusCode != 201 {
+		return fmt.Errorf("not able to run job: %d", respData.StatusCode)
+	}
+	return nil
 }

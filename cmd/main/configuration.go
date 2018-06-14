@@ -24,6 +24,8 @@ const (
 var options struct {
 	Jenkins []struct {
 		Location string
+		Username string
+		Password string
 		Jobs     []string
 	}
 	Application struct {

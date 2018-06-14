@@ -139,3 +139,8 @@ func (api *MockAPI) GetLastLogLines(job, id string, lineCount int) ([]string, er
 		"line3",
 	}, nil
 }
+
+// RunJob will execute a job (expected - without parameters)
+func (api *MockAPI) RunJob(job string) error {
+	return nil
+}

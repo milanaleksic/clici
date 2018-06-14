@@ -20,34 +20,41 @@ const (
 	CmdOpenPreviousJobGroup = "openPreviousJob"
 	// CmdTestsForJobGroup declares a command group to open the dialog with failing tests in a job behind a certain id
 	CmdTestsForJobGroup = "openTests"
+	// CmdRunJob runs a job with a certain ID
+	CmdRunJob = "runJob"
 )
 
-// CmdShutdown creates a new command of group CmdShutdownGroup
-func CmdShutdown() Command {
+// CreateCmdShutdownGroup creates a new command of group CmdShutdownGroup
+func CreateCmdShutdownGroup() Command {
 	return Command{Group: CmdShutdownGroup}
 }
 
-// CmdClose creates a new command of group CmdShowHelpGroup
-func CmdClose() Command {
+// CreateCmdCloseGroup creates a new command of group CmdShowHelpGroup
+func CreateCmdCloseGroup() Command {
 	return Command{Group: CmdCloseGroup}
 }
 
-// CmdShowHelp creates a new command of group CmdShowHelpGroup
-func CmdShowHelp() Command {
+// CreateCmdShowHelpGroup creates a new command of group CmdShowHelpGroup
+func CreateCmdShowHelpGroup() Command {
 	return Command{Group: CmdShowHelpGroup}
 }
 
-// CmdOpenCurrentJob creates a new command of group CmdOpenCurrentJobGroup
-func CmdOpenCurrentJob() Command {
+// CreateCmdOpenCurrentJobGroup creates a new command of group CmdOpenCurrentJobGroup
+func CreateCmdOpenCurrentJobGroup() Command {
 	return Command{Group: CmdOpenCurrentJobGroup}
 }
 
-// CmdOpenPreviousJob creates a new command of group CmdOpenPreviousJobGroup
-func CmdOpenPreviousJob() Command {
+// CreateCmdOpenPreviousJob creates a new command of group CmdOpenPreviousJobGroup
+func CreateCmdOpenPreviousJob() Command {
 	return Command{Group: CmdOpenPreviousJobGroup}
 }
 
-// CmdTestsForJob creates a new command of group CmdTestsForJobGroup
-func CmdTestsForJob() Command {
+// CreateCmdTestsForJobGroup creates a new command of group CmdTestsForJobGroup
+func CreateCmdTestsForJobGroup() Command {
 	return Command{Group: CmdTestsForJobGroup}
+}
+
+// CreateCmdRunJob creates a new command of group CmdRunJob
+func CreateCmdRunJob() Command {
+	return Command{Group: CmdRunJob}
 }

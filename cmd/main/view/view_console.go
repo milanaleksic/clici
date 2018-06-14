@@ -29,7 +29,7 @@ func registerInterruptListener(feedbackChannel chan Command) {
 	signal.Notify(c, os.Interrupt)
 	go func() {
 		<-c
-		feedbackChannel <- CmdShutdown()
+		feedbackChannel <- CreateCmdShutdownGroup()
 	}()
 }
 

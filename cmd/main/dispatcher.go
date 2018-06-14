@@ -48,6 +48,8 @@ func (dispatcher *dispatcher) dispatch(x view.Command) bool {
 		dispatcher.controller.VisitPreviousJob(x.Job)
 	case view.CmdTestsForJobGroup:
 		dispatcher.controller.ShowTests(x.Job)
+	case view.CmdRunJob:
+		dispatcher.controller.RunJob(x.Job)
 	}
 	return false
 }

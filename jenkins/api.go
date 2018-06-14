@@ -13,6 +13,7 @@ type API interface {
 	GetFailedTestList(job string) (testCaseResult []TestCase, err error)
 	GetFailedTestListFor(job, id string) (testCaseResult []TestCase, err error)
 	GetLastLogLines(job, id string, lineCount int) ([]string, error)
+	RunJob(job string) error
 }
 
 // NewMockAPI creates mocking API, usable for testing only
@@ -21,9 +22,11 @@ func NewMockAPI() API {
 }
 
 // NewAPI will create a real API, which will communicate with a certain Jenkins server
-func NewAPI(location string) API {
+func NewAPI(location, username, password string) API {
 	return &ServerAPI{
 		ServerLocation: location,
+		Username: username,
+		Password: password,
 	}
 }
 

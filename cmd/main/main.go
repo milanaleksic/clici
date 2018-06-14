@@ -24,7 +24,7 @@ func getAPI() (result []controller.JenkinsAPIRoot) {
 	}
 	for _, aServer := range options.Jenkins {
 		result = append(result, controller.JenkinsAPIRoot{
-			API:  jenkins.NewAPI(aServer.Location),
+			API:  jenkins.NewAPI(aServer.Location, aServer.Username, aServer.Password),
 			Jobs: aServer.Jobs,
 			Server: aServer.Location,
 		})

@@ -220,3 +220,15 @@ func (controller *Controller) RemoveModals() {
 	controller.state.FailedTests = nil
 	controller.updateView()
 }
+
+func (controller *Controller) RunJob(id int) {
+	log.Println("Controller: RunJob")
+	if api, ok := controller.apiForState(id); ok {
+		err := api.RunJob(controller.state.JobStates[id].JobName)
+		if err != nil {
+			log.Printf("Error state: %v", err)
+			controller.state.Error = err
+		}
+		controller.updateView()
+	}
+}

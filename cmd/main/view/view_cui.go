@@ -167,7 +167,7 @@ func NewCUIInterface(feedbackChannel chan Command) (view *CUIInterface, err erro
 			log.Panicln(err)
 		}
 		view.gui.Close()
-		feedbackChannel <- CmdShutdown()
+		feedbackChannel <- CreateCmdShutdownGroup()
 	}()
 	return
 }
@@ -189,22 +189,25 @@ func (ui *CUIInterface) setKeyBindings() {
 		return
 	}
 	if err := ui.gui.SetKeybinding("", '?', gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
-		ui.feedbackChannel <- CmdShowHelp()
+		ui.feedbackChannel <- CreateCmdShowHelpGroup()
 		return nil
 	}); err != nil {
 		return
 	}
-	var cmd = CmdOpenCurrentJob()
+	var cmd = CreateCmdOpenCurrentJobGroup()
 	setCommand := func(x Command) func(*gocui.Gui, *gocui.View) error {
 		return func(g *gocui.Gui, v *gocui.View) error {
 			cmd = x
 			return nil
 		}
 	}
-	if err := ui.gui.SetKeybinding("", 'p', gocui.ModNone, setCommand(CmdOpenPreviousJob())); err != nil {
+	if err := ui.gui.SetKeybinding("", 'p', gocui.ModNone, setCommand(CreateCmdOpenPreviousJob())); err != nil {
 		return
 	}
-	if err := ui.gui.SetKeybinding("", 't', gocui.ModNone, setCommand(CmdTestsForJob())); err != nil {
+	if err := ui.gui.SetKeybinding("", 't', gocui.ModNone, setCommand(CreateCmdTestsForJobGroup())); err != nil {
+		return
+	}
+	if err := ui.gui.SetKeybinding("", 'r', gocui.ModNone, setCommand(CreateCmdRunJob())); err != nil {
 		return
 	}
 	for i := 0; i < 20; i++ {
@@ -212,14 +215,14 @@ func (ui *CUIInterface) setKeyBindings() {
 		if err := ui.gui.SetKeybinding("", itoidrune(i), gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
 			cmd.Job = localizedI
 			ui.feedbackChannel <- cmd
-			cmd = CmdOpenCurrentJob()
+			cmd = CreateCmdOpenCurrentJobGroup()
 			return nil
 		}); err != nil {
 			return
 		}
 	}
 	if err := ui.gui.SetKeybinding("", gocui.KeyEnter, gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
-		ui.feedbackChannel <- CmdClose()
+		ui.feedbackChannel <- CreateCmdCloseGroup()
 		return nil
 	}); err != nil {
 		return
@@ -282,6 +285,7 @@ func (ui *CUIInterface) helpDialog() {
 				"           <id> - Open Last Job URL\n"+
 				"         p+<id> - Open Last Completed Job URL\n"+
 				"         t+<id> - Show Test failures\n"+
+				"         r+<id> - Run Job\n"+
 				"          Enter - Close Help\n")
 		}
 		return nil
