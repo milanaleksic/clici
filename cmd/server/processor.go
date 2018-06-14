@@ -10,7 +10,7 @@ import (
 )
 
 // APISupplier is a supplier of an API, in case one doesn't want to use default implementations
-type APISupplier func(serverLocation string) jenkins.API
+type APISupplier func(serverLocation string, username, password string) jenkins.API
 
 // Processor is able to wrap transparently controllers and get which mappings need to be updated with which states
 type Processor struct {
@@ -41,7 +41,7 @@ func (processor *Processor) ProcessMappings() {
 			cont = &controller.Controller{
 				APIs: []controller.JenkinsAPIRoot{
 					{
-						API:    processor.apiSupplier(server),
+						API:    processor.apiSupplier(server, "", ""),
 						Server: server,
 						Jobs:   registrations,
 					},
