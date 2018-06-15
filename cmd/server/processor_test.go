@@ -109,6 +109,11 @@ func (api *testAPI) GetFailedTestList(job string) (testCaseResult []jenkins.Test
 	return
 }
 
+// RunJob will execute a job (expected - without parameters)
+func (api *testAPI) RunJob(job string) error {
+	return nil
+}
+
 func TestProcessor(t *testing.T) {
 	var wg sync.WaitGroup
 	wg.Add(1)
