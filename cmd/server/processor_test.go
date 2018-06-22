@@ -121,7 +121,7 @@ func TestProcessor(t *testing.T) {
 	api := testAPI{color: "blue"}
 	outputChannel := make(chan model.JobState)
 	processor := NewProcessorWithSupplier(
-		func(server string) jenkins.API {
+		func(serverLocation string, username, server string) jenkins.API {
 			return &api
 		},
 	)

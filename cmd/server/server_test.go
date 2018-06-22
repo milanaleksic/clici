@@ -123,7 +123,7 @@ func withRunningServer(t *testing.T, callback func(clici *CliciServer, ws *webso
 
 	handler := New(port)
 	api := testAPI{color: "blue"}
-	handler.processor.apiSupplier = func(server string) jenkins.API {
+	handler.processor.apiSupplier = func(serverLocation string, username, server string) jenkins.API {
 		return &api
 	}
 
