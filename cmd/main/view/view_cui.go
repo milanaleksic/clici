@@ -8,6 +8,7 @@ import (
 
 	"github.com/jroimartin/gocui"
 	"github.com/milanaleksic/clici/model"
+	"strings"
 )
 
 // CUIInterface is a View that uses a ncurses-like advanced interface that
@@ -51,24 +52,44 @@ func (ui *CUIInterface) PresentState(state *model.State) {
 	}
 	ui.gui.SetLayout(func(gui *gocui.Gui) error {
 		lengthForJobNames := ui.maxLengthOfName(state)
-		if v, err := gui.SetView("job_id", 0, ui.tableStart, 3, 2*len(state.JobStates)+4); err != nil {
+		groupCount := ui.countDistinctGroups(state)
+		if v, err := gui.SetView("job_id", 0, ui.tableStart, 3, 2*len(state.JobStates)+4+groupCount); err != nil {
 			checkCui(err)
 			v.Frame = false
 			v.FgColor = gocui.ColorWhite
-			for i := range state.JobStates {
-				fmt.Fprintf(v, "%s\n", string(itoidrune(i)))
+			prevGroup := ""
+			iter := 0
+			for _, jobState := range state.JobStates {
+				if jobState.Group != prevGroup {
+					prevGroup = jobState.Group
+					fmt.Fprintf(v, " \n")
+				}
+				fmt.Fprintf(v, "%s\n", string(itoidrune(iter)))
+				iter++
 			}
 		}
-		if v, err := gui.SetView("job_name", 2, ui.tableStart, lengthForJobNames+3, 2*len(state.JobStates)+4); err != nil {
+		if v, err := gui.SetView("job_name", 2, ui.tableStart, lengthForJobNames+3, 2*len(state.JobStates)+4+groupCount); err != nil {
 			checkCui(err)
 			v.Frame = false
 			v.FgColor = gocui.ColorYellow
+			prevGroup := ""
 			for _, jobState := range state.JobStates {
+				if jobState.Group != prevGroup {
+					prevGroup = jobState.Group
+					fmt.Fprintf(v, ui.leftPad2Len(fmt.Sprintf(" %v\n", jobState.Group), "=", lengthForJobNames+1))
+				}
 				fmt.Fprintf(v, "%"+strconv.Itoa(lengthForJobNames)+"v\n", jobState.JobName)
 			}
 		}
-		for index, jobState := range state.JobStates {
-			ui.showJobColumns(&jobState, index, lengthForJobNames)
+		prevGroup := ""
+		iter := 0
+		for _, jobState := range state.JobStates {
+			if jobState.Group != prevGroup {
+				prevGroup = jobState.Group
+				iter++
+			}
+			ui.showJobColumns(&jobState, iter, lengthForJobNames)
+			iter++
 		}
 		ui.topLine(lengthForJobNames)
 		ui.bottomLine()
@@ -322,4 +343,20 @@ func (ui *CUIInterface) maxLengthOfName(state *model.State) (lengthForJobNames i
 		}
 	}
 	return
+}
+
+func (ui *CUIInterface) countDistinctGroups(state *model.State) (distinctGroupCount int) {
+	distinctGroups := make(map[string]bool)
+	for _, jobState := range state.JobStates {
+		if jobState.Group != "" {
+			distinctGroups[jobState.Group] = true
+		}
+	}
+	return len(distinctGroups)
+}
+
+func (ui *CUIInterface) leftPad2Len(s string, padStr string, overallLen int) string {
+	var padCountInt = 1 + ((overallLen - len(padStr)) / len(padStr))
+	var retStr = strings.Repeat(padStr, padCountInt) + s
+	return retStr[(len(retStr) - overallLen):]
 }

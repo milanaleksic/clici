@@ -17,6 +17,7 @@ import (
 type JenkinsAPIRoot struct {
 	API    jenkins.API
 	Server string
+	Group  string
 	Jobs   []string
 }
 
@@ -104,6 +105,7 @@ func (controller *Controller) explainProperStates(jenkinsAPIRoot *JenkinsAPIRoot
 	if len(jenkinsAPIRoot.Jobs) == 1 && jenkinsAPIRoot.Jobs[0] == "" {
 		for _, item := range jenkinsAnswer.JobBuildStatus {
 			jobStates = append(jobStates, &model.JobState{
+				Group:         jenkinsAPIRoot.Group,
 				JobName:       item.Name,
 				Server:        jenkinsAPIRoot.Server,
 				PreviousState: model.BuildStatusFromColor(item.Color),
@@ -114,6 +116,7 @@ func (controller *Controller) explainProperStates(jenkinsAPIRoot *JenkinsAPIRoot
 			for _, item := range jenkinsAnswer.JobBuildStatus {
 				if jobWeCareAbout == item.Name {
 					jobStates = append(jobStates, &model.JobState{
+						Group:         jenkinsAPIRoot.Group,
 						JobName:       item.Name,
 						Server:        jenkinsAPIRoot.Server,
 						PreviousState: model.BuildStatusFromColor(item.Color),
