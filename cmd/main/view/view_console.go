@@ -13,6 +13,7 @@ import (
 var greenFormat = ansi.ColorFunc("green+b+h")
 var blueFormat = ansi.ColorFunc("blue+b+h")
 var magentaFormat = ansi.ColorFunc("magenta+b")
+var grayFormat = ansi.ColorFunc("grey")
 var whiteFormat = ansi.ColorFunc("white+b+h")
 var redFormat = ansi.ColorFunc("red+b")
 var yellowFormat = ansi.ColorFunc("yellow+b+h")
@@ -59,6 +60,8 @@ func friendlyPreviousState(buildStatus *model.JobState) string {
 		return withResetOnEnd(greenFormat(successChar()))
 	case buildStatus.PreviousState == model.Undefined:
 		return withResetOnEnd(magentaFormat(undefinedChar()))
+	case buildStatus.PreviousState == model.Disabled:
+		return withResetOnEnd(grayFormat(undefinedChar()))
 	case buildStatus.PreviousState == model.Unknown:
 		return withResetOnEnd(whiteFormat(unknownChar()))
 	default:

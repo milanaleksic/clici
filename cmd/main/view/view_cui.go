@@ -33,6 +33,8 @@ func friendlyKnownStatus(buildStatus model.JobState) string {
 		return successChar()
 	case buildStatus.PreviousState == model.Undefined:
 		return undefinedChar()
+	case buildStatus.PreviousState == model.Disabled:
+		return undefinedChar()
 	}
 	return ""
 }
@@ -131,6 +133,8 @@ func (ui *CUIInterface) showJobStatusColumn(jobState *model.JobState, index int,
 			v.FgColor = gocui.ColorGreen | gocui.AttrBold
 		case jobState.PreviousState == model.Undefined:
 			v.FgColor = gocui.ColorMagenta | gocui.AttrBold
+		case jobState.PreviousState == model.Disabled:
+			v.FgColor = gocui.ColorYellow
 		case jobState.PreviousState == model.Unknown:
 			v.FgColor = gocui.ColorWhite | gocui.AttrBold
 		default:
@@ -149,12 +153,16 @@ func (ui *CUIInterface) showJobDescriptionColumn(jobState *model.JobState, index
 			v.FgColor = gocui.ColorRed | gocui.AttrBold
 			fmt.Fprintf(v, "API processing had an error: %v", jobState.Error)
 		} else {
-			if jobState.PreviousState == model.Success {
+			switch {
+			case jobState.PreviousState == model.Success:
 				v.FgColor = gocui.ColorGreen
 				fmt.Fprintf(v, "%v (%v)", jobState.CausesFriendly, jobState.Time)
-			} else {
+			case jobState.PreviousState == model.Failure:
 				v.FgColor = gocui.ColorRed | gocui.AttrBold
 				fmt.Fprintf(v, "%v (%v); failed by %v", jobState.CausesFriendly, jobState.Time, jobState.CulpritsFriendly)
+			case jobState.PreviousState == model.Disabled || jobState.PreviousState == model.Unknown || jobState.PreviousState == model.Undefined:
+				v.FgColor = gocui.ColorYellow
+				fmt.Fprintf(v, "%v (%v)", jobState.CausesFriendly, jobState.Time)
 			}
 		}
 	}

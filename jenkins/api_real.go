@@ -50,6 +50,10 @@ func (api *ServerAPI) GetCurrentStatus(job string) (*JobStatus, error) {
 // GetStatusForJob returns a status of a specific job run
 func (api *ServerAPI) GetStatusForJob(job string, id string) (*JobStatus, error) {
 	possibleCacheKey := fmt.Sprintf("%s-%s", job, id)
+	if strings.Contains(job,"/") {
+		log.Println("Rejecting StatusForJob since folder structure has been detected and that's not supported: ", job)
+		return nil, errStatusPageNotFound
+	}
 	if id != lastBuild && id != lastCompletedBuild {
 		if api.cachedStatuses == nil {
 			api.cachedStatuses = make(map[string](*JobStatus), 0)
@@ -109,6 +113,9 @@ func (api *ServerAPI) CausesOfFailures(name, id string) []string {
 	set := make(map[string]bool, 0)
 	var visitsToServerAllowed = 20
 	for {
+		if id == lastCompletedBuild {
+			break
+		}
 		currentID, err := strconv.Atoi(id)
 		if err != nil {
 			log.Printf("Could not parse number: %s, reason: %+v; will give up from fetching further causes\n", id, err)

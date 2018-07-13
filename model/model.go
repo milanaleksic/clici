@@ -27,6 +27,8 @@ func BuildStatusFromColor(color string) BuildStatus {
 		return Failure
 	} else if strings.Index(color, "aborted") == 0 || strings.Index(color, "nobuilt") == 0 {
 		return Undefined
+	} else if strings.Index(color, "disabled") == 0 {
+		return Disabled
 	}
 	log.Printf("Unknown color: %v\n", color)
 	return Unknown
@@ -43,6 +45,8 @@ const (
 	Undefined
 	// Unknown job state means that this application is not able to deduce job state
 	Unknown
+	// Disabled job state means that job is not active
+	Disabled
 )
 
 // JobState is full representation of job state in Jenkins, with all known data program can extract at this time
